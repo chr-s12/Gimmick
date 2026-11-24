@@ -1,0 +1,87 @@
+
+[
+    {
+        "routine_id": "RT001",
+        "student_id": "ST001",
+        "routine_name": "Upper Body",
+        "exercises": [
+            {
+                "exercise_id": "EX001",
+                "exercise_name": "Bench Press",
+                "sets": 3,
+                "reps": 10,
+                "weight_kg": 40
+            },
+            {
+                "exercise_id": "EX002",
+                "exercise_name": "Bicep Curls",
+                "sets": 3,
+                "reps": 12,
+                "weight_kg": 15
+            },
+            {
+                "exercise_id": "EX003",
+                "exercise_name": "Shoulder Press",
+                "sets": 3,
+                "reps": 10,
+                "weight_kg": 20
+            }
+        ]
+    },
+    {
+        "routine_id": "RT002",
+        "student_id": "ST001",
+        "routine_name": "Full Body",
+        "exercises": [
+            {
+                "exercise_id": "EX004",
+                "exercise_name": "Squats",
+                "sets": 3,
+                "reps": 10,
+                "weight_kg": 60
+            },
+            {
+                "exercise_id": "EX001",
+                "exercise_name": "Bench Press",
+                "sets": 3,
+                "reps": 10,
+                "weight_kg": 40
+            },
+            {
+                "exercise_id": "EX005",
+                "exercise_name": "Deadlift",
+                "sets": 3,
+                "reps": 8,
+                "weight_kg": 70
+            }
+        ]
+    },
+    {
+        "routine_id": "RT003",
+        "student_id": "ST002",
+        "routine_name": "Lower Body",
+        "exercises": [
+            {
+                "exercise_id": "EX004",
+                "exercise_name": "Squats",
+                "sets": 3,
+                "reps": 10,
+                "weight_kg": 50
+            },
+            {
+                "exercise_id": "EX006",
+                "exercise_name": "Leg Press",
+                "sets": 3,
+                "reps": 12,
+                "weight_kg": 80
+            },
+            {
+                "exercise_id": "EX007",
+                "exercise_name": "Calf Raises",
+                "sets": 3,
+                "reps": 15,
+                "weight_kg": 20
+            }
+        ]
+    }
+]

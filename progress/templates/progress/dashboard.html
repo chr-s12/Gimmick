@@ -7,9 +7,38 @@
     <title>Gymmick | My Progress</title>
 </head>
 <body>
+
     <h1>Gymmick</h1>
     <h2>Workout Logging and Progress Tracking</h2>
 
-    <p>Feature 4 is running successfully.</p>
+    <p>Welcome, {{ student.username }}</p>
+
+    <h3>My Saved Routines</h3>
+
+    {% for routine in routines %}
+
+        <section>
+            <h4>{{ routine.routine_name }}</h4>
+
+            <p>Exercises: {{ routine.exercises | length }}</p>
+
+            <ul>
+                {% for exercise in routine.exercises %}
+                    <li>
+                        {{ exercise.exercise_name }}:
+                        {{ exercise.sets }} sets ×
+                        {{ exercise.reps }} reps at
+                        {{ exercise.weight_kg }} kg
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+    {% else %}
+
+        <p>You do not have any saved routines.</p>
+
+    {% endfor %}
+
 </body>
 </html>
