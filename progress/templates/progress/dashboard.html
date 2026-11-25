@@ -32,6 +32,12 @@
                     </li>
                 {% endfor %}
             </ul>
+
+
+            <a href="{{ url_for('progress.log_workout',
+                            routine_id=routine.routine_id) }}">
+                Log Workout
+            </a>
         </section>
 
     {% else %}

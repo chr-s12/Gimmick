@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gymmick | Log Workout</title>
+
+    <style>
+        .error {
+            color: #b91c1c;
+        }
+
+        .invalid {
+            border: 2px solid #b91c1c;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gymmick</h1>
+    <h2>Log Workout</h2>
+
+    <h3>{{ routine.routine_name }}</h3>
+
+    {% if errors.routine %}
+        <p class="error" role="alert">{{ errors.routine }}</p>
+    {% else %}
+    <p>Enter your actual completed exercise details.</p>
+
+    {% if errors %}
+        <p class="error" role="alert">
+            Please correct the invalid fields below.
+        </p>
+    {% endif %}
+
+    <form method="POST"
+          action="{{ url_for('progress.log_workout',
+                             routine_id=routine.routine_id) }}">
+
+        {% for exercise in routine.exercises %}
+
+            {% set sets_field = 'sets_' ~ loop.index0 %}
+            {% set reps_field = 'reps_' ~ loop.index0 %}
+            {% set weight_field = 'weight_' ~ loop.index0 %}
+
+            <fieldset>
+
+                <legend>{{ exercise.exercise_name }}</legend>
+
+                <p>
+                    Planned: {{ exercise.sets }} sets ×
+                    {{ exercise.reps }} reps at
+                    {{ exercise.weight_kg }} kg
+                </p>
+
+                <p>
+                    <label for="{{ sets_field }}">
+                        Completed Sets:
+                    </label>
+
+                    <input type="number"
+                           id="{{ sets_field }}"
+                           name="{{ sets_field }}"
+                           value="{{ form_data.get(sets_field, exercise.sets if not errors else '') }}"
+                           class="{{ 'invalid' if sets_field in errors else '' }}"
+                           min="1"
+                           step="1"
+                           required>
+
+                    {% if sets_field in errors %}
+                        <span class="error">
+                            {{ errors[sets_field] }}
+                        </span>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ reps_field }}">
+                        Completed Reps:
+                    </label>
+
+                    <input type="number"
+                           id="{{ reps_field }}"
+                           name="{{ reps_field }}"
+                           value="{{ form_data.get(reps_field, exercise.reps if not errors else '') }}"
+                           class="{{ 'invalid' if reps_field in errors else '' }}"
+                           min="1"
+                           step="1"
+                           required>
+
+                    {% if reps_field in errors %}
+                        <span class="error">
+                            {{ errors[reps_field] }}
+                        </span>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ weight_field }}">
+                        Weight (kg):
+                    </label>
+
+                    <input type="number"
+                           id="{{ weight_field }}"
+                           name="{{ weight_field }}"
+                           value="{{ form_data.get(weight_field, exercise.weight_kg if not errors else '') }}"
+                           class="{{ 'invalid' if weight_field in errors else '' }}"
+                           min="0"
+                           step="any"
+                           required>
+
+                    {% if weight_field in errors %}
+                        <span class="error">
+                            {{ errors[weight_field] }}
+                        </span>
+                    {% endif %}
+                </p>
+
+            </fieldset>
+
+            <br>
+
+        {% endfor %}
+
+        <button type="submit">
+            Save Completed Workout
+        </button>
+
+    </form>
+    {% endif %}
+
+    <p>
+        <a href="{{ url_for('progress.dashboard') }}">
+            Back to My Routines
+        </a>
+    </p>
+
+</body>
+</html>

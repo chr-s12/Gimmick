@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gymmick | Workout Summary</title>
+</head>
+<body>
+
+    <h1>Gymmick</h1>
+    <h2>Completed Workout Summary</h2>
+
+    <p style="color: green;">
+        Workout successfully validated.
+    </p>
+
+    <p>
+        This workout has not yet been saved permanently.
+    </p>
+
+    <h3>{{ workout.routine_name }}</h3>
+
+    <p>Workout ID: {{ workout.workout_id }}</p>
+    <p>Student ID: {{ workout.student_id }}</p>
+
+    <p>
+        Completed at (UTC):
+        {{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}
+    </p>
+
+    <h3>Completed Exercises</h3>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>Exercise</th>
+                <th>Sets</th>
+                <th>Repetitions</th>
+                <th>Weight (kg)</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for exercise in workout.exercises %}
+                <tr>
+                    <td>{{ exercise.exercise_name }}</td>
+                    <td>{{ exercise.sets }}</td>
+                    <td>{{ exercise.reps }}</td>
+                    <td>{{ exercise.weight_kg }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>
+        <a href="{{ url_for('progress.dashboard') }}">
+            Back to My Routines
+        </a>
+    </p>
+
+</body>
+</html>
