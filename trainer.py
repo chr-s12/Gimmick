@@ -1,4 +1,4 @@
-from active_user import ActiveUser
+from ActiveUser import ActiveUser
 from datetime import datetime
 
 class Trainer(ActiveUser):
