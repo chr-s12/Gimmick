@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="signup.css">
+	<title>Member Sign Up</title>
+</head>
+<body>
+    <header>
+        <h1>Member Sign Up</h1>
+    </header>
+	<main>
+		
+		<form action="#" method="post">
+			<div>
+				<label for="member-name">Name</label>
+				<input type="text" id="member-name" name="name" autocomplete="name" required>
+			</div>
+
+			<div>
+				<label for="member-id">ID number</label>
+				<input type="text" id="member-id" name="id" required>
+			</div>
+
+			<fieldset>
+				<legend>Role</legend>
+				<label>
+					<input type="radio" name="role" value="gym-goer" required>
+					Gym goer
+				</label>
+				<label>
+					<input type="radio" name="role" value="trainer">
+					Trainer
+				</label>
+			</fieldset>
+
+			<button type="submit">Sign up</button>
+		</form>
+	</main>
+</body>
+</html>
