@@ -116,8 +116,14 @@ def testWalkInAtFullGymIsAddedToQueueByStaff(occupancy, clock):
     assert you["inQueue"] and not you["inside"] and you["position"] == 2
     assert occupancy.getMemberStatus()["occupancy"] == 20
     assert any("Gym staff added you" in n["message"] for n in occupancy.getNotifications(student(22)))
-    with pytest.raises(OccupancyError, match="trainer account cannot"):
-        occupancy.recordEntry("T1", "S1")                 # trainers can't queue
+
+
+def testTrainersDontCountTowardsTheLimit(occupancy):
+    with pytest.raises(OccupancyError, match="Trainers don't count"):
+        occupancy.recordEntry("T1", "S1")
+    with pytest.raises(OccupancyError, match="Trainers don't count"):
+        occupancy.requestEntry("T1")
+    assert occupancy.getMemberStatus()["occupancy"] == 0
 
 
 # ---------------------------------------------------------------- 1-hour time limit

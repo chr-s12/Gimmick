@@ -86,8 +86,9 @@ class OccupancyService:
     # ---------------------------------------------------------------- actions
     def recordEntry(self, uwiId: str, staffId: str) -> str:
         """Staff check someone in (AC-03.1). When the gym is full, only the called student
-        may enter (SRS 3.2.1.2); any other walk-in is put in the queue instead."""
-        self._requireUser(uwiId, ("student", "trainer"))
+        may enter (SRS 3.2.1.2); any other walk-in is put in the queue instead.
+        Only students are counted: trainers and staff don't count towards the 20-person limit."""
+        self._requireUser(uwiId, ("student",))
         with self._session(mustBeOpen=True) as s:
             entry = s.queue.find(uwiId=uwiId)
             if uwiId in s.inside:
@@ -224,6 +225,9 @@ class OccupancyService:
         user = self.users.get(uwiId)
         if user is None:
             raise OccupancyError(f"No registered user has UWI ID {uwiId}.")
+        if user["role"] in ("trainer", "staff") and roles == ("student",):
+            raise OccupancyError(f"{user['role'].capitalize()}s don't count towards the gym's capacity, "
+                                 "so they are not checked in or queued.")
         if user["role"] not in roles:
             raise OccupancyError(f"A {user['role']} account cannot do this.")
 
