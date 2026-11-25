@@ -13,7 +13,7 @@
             <div><dt>Student ID</dt><dd>{{ workout.student_id }}</dd></div>
             <div>
                 <dt>Completed at</dt>
-                <dd><time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S %z') }}</time></dd>
+                <dd><time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at | gymmick_completed_time }}</time></dd>
             </div>
         </dl>
         <h3 id="completed-exercises">Completed Exercises</h3>

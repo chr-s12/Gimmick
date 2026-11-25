@@ -98,9 +98,12 @@ server-side.
 Step 4.4 proposes adding `ProgressService.get_workout_history(student_id)`
 to the business-logic layer and `GET /progress/history` to the controller
 design. The service returns repository records newest first by UTC instant.
-Records completed at the same instant retain their saved order. The history
-screen displays each record's original UTC offset and links to its saved
-summary. Both views use the mock student's identity and the stored workout
+Records completed at the same instant retain their saved order. History
+links to each saved summary. Both views display completion times in the
+Jamaica timezone used by analytics while retaining the original timestamp
+in storage and in the HTML time element. If a boundary timestamp cannot
+be converted, the view displays its stored offset. Both views use the
+mock student's identity and the stored workout
 snapshot, so routine changes or removal do not affect previous workouts.
 An empty history returns HTTP 200 with a link to saved routines. Storage
 failures return HTTP 500 with a generic message and server-side logging.
@@ -432,8 +435,8 @@ the shared GET selection fields, and the SVG chart presentation models.
 Group integration needs the shared student identity, routine provider, and
 layout. Team approval of the proposed SDS and UML metrics remains pending.
 Phase 7 adds the chart save option and standalone file access for AC-04.4
-and Scenarios 4.3 and 4.5. Scenario 4.6 still requires actual
-insufficient-storage verification.
+and Scenarios 4.3 and 4.5. The original Scenario 4.6 remains unverified.
+See the Phase 8 acceptance review for the proposed replacement.
 
 ### Step 7.1 SVG export foundation
 
@@ -475,10 +478,9 @@ Status codes distinguish preparation failure, unsupported direct save,
 picker dismissal, permission denial, detectable storage or quota errors,
 other write failures, and download initiation failure. Error details are
 available to callers separately from the outcome status. A quota signal
-alone cannot establish insufficient physical disk space. Some browsers
-cannot report that specific failure. Scenario 4.6 still needs verification
-in a safe, isolated failure environment. Chart-specific metadata wiring,
-download controls, and final acceptance checks are pending.
+alone cannot establish insufficient physical disk space. Standard browser
+downloads do not reliably report local write failures. The Phase 8
+acceptance review records the proposed change to Scenario 4.6.
 
 Browser API references:
 [Chrome File System Access guide](https://developer.chrome.com/docs/capabilities/web-apis/file-system-access)
@@ -520,8 +522,8 @@ the displayed chart after a subsequent workout. A downloaded 15-week
 SVG matched the selected dates, values and indicators. Quick Look
 rendered it after the local Flask preview stopped.
 
-Shared save controls and feedback remain pending. Direct file saving and insufficient physical storage
-were not verified with the weekly button. Scenario 4.6 remains open.
+Step 7.4 added the shared save controls and feedback. This walkthrough
+verified the standard browser download.
 
 ### Step 7.3 Individual Exercise Progression downloads
 
@@ -597,10 +599,9 @@ picker request entered the pending state in the in-app browser, where
 automation could not operate the destination dialog. Mocked tests
 covered confirmed write and close, cancellation, permission and quota
 failures, generic write errors, cleanup and overlapping attempts.
-Scenario 4.6 remains outstanding for real insufficient-space verification.
-The browser was not exercised against a real write failure. A disposable
-disk image was considered, but the native picker could not be driven to
-a controlled destination in the test environment.
+Actual native file-write failures and insufficient physical storage
+remain unverified. Further physical-storage testing is outside the
+proposed prototype scope.
 
 To check direct saving manually, open the local My Progress page in
 desktop Chrome. Choose **Save SVG**, select a new file in a writable
@@ -630,7 +631,190 @@ For the proposed SDS and UML revision, record the browser-side SVG
 snapshot preparation, chart-specific metadata adapters and shared save
 and feedback handler in the presentation layer. The snapshot comes
 from the existing chart markup and needs no export endpoint or
-persistent export data. Phase 8 application verification and Phase 9
-work remain open. Group integration still needs real authentication,
+persistent export data. Group integration still needs real authentication,
 shared student and routine providers, and approval of the revised
 metrics.
+
+### Step 8.1 consolidated acceptance review
+
+The regression run passed 149 Python tests and 17 JavaScript tests.
+Isolated storage was used for workout tests and the application store
+checksum matched before and after the run. Earlier actual browser and
+offline SVG checks support AC-04.0 through AC-04.4 and Scenarios 4.1
+through 4.5 together with the automated evidence. This assessment covers
+the standalone mock-student prototype. Analytics recalculate on the next
+dashboard request after a successful save. Real authentication, shared
+Routine Builder integration and final group access-control verification
+remain outstanding. Team approval of the proposed analytics metrics
+and the associated SDS and UML changes remains pending.
+
+**Proposed SRS revision (team approval pending) — Scenario 4.6:
+Visualisation Saving Failure**
+
+> Given the student is viewing a generated visualisation,
+>
+> When a file-saving operation fails and the browser reports the failure,
+>
+> Then Gymmick displays an appropriate error message and allows the
+> student to retry or use an alternative download method.
+
+The original insufficient-device-storage scenario remains unverified.
+Ordinary browser-managed downloads do not reliably expose local
+file-write failures or available disk space to Gymmick. Further physical
+storage detection and testing are outside the proposed prototype scope.
+The existing direct-save implementation remains in place. Mocked API and
+control tests verify browser-reported failure classification, feedback,
+and control restoration. Actual native file writing and actual write
+failure handling remain unverified. Review the original scenario for
+replacement or removal when the team reviews the SRS.
+
+### Step 8.2 performance and offline verification
+
+SRS v1.1 §3.1.4, Data Loading, states: “User workout history, saved
+routine templates, and personal dashboards shall load within 5 seconds.”
+Sections 1.4–1.5 describe a single-computer browser prototype backed by
+local Flask and JSON that works without internet after installation.
+
+The benchmark ran on macOS 26.7.3, Apple M1 (arm64), 16 GiB installed
+RAM, Python 3.12.14 and Flask 3.1.3. The deterministic fixture includes
+three routines, overlapping exercise IDs, gap weeks, same-day sessions,
+decimal weights, unweighted exercises and a second fictional owner.
+The 30, 250 and 1,000 total records contained 27, 225 and 900 workouts for
+the mock student and occupied 20,011, 166,742 and 666,942 JSON bytes.
+
+Run the standard-library benchmark from the repo root:
+
+```sh
+PYTHONPATH="$PWD" .venv/bin/python -B scripts/benchmark_progress.py
+```
+
+Each operation has one untimed warm-up and seven measured repetitions.
+The script uses `perf_counter()`, restores the JSON baseline before
+each timed save, fixes the analytics reference date in Jamaica, and
+checks outcomes outside the timed interval. Flask test-client results
+include request handling, storage, calculations and rendered response
+construction. The table shows median / maximum milliseconds.
+
+| Flask test-client route | 30 records | 250 records | 1,000 records |
+| --- | ---: | ---: | ---: |
+| Saved routines | 0.27 / 0.39 | 0.26 / 0.51 | 0.25 / 0.31 |
+| History | 2.44 / 2.60 | 18.93 / 23.41 | 74.65 / 77.26 |
+| Individual workout summary | 0.61 / 0.73 | 3.36 / 3.86 | 12.99 / 18.30 |
+| My Progress, all time | 2.23 / 2.44 | 13.96 / 18.19 | 52.82 / 60.24 |
+| My Progress, last 30 days | 1.92 / 2.11 | 8.16 / 8.33 | 28.50 / 33.29 |
+| My Progress, last 7 days | 1.64 / 1.82 | 8.00 / 8.09 | 29.63 / 35.53 |
+| My Progress, custom dates | 1.94 / 2.05 | 8.05 / 8.35 | 29.88 / 33.93 |
+
+At 1,000 records, the repository's student lookup was 12.73 / 12.96 ms,
+individual lookup 12.69 / 17.22 ms and save 39.37 / 45.22 ms. All-time
+service analytics took 43.60 / 48.10 ms, including repository reads.
+The calculation alone took 29.69 / 35.30 ms. The script prints the
+complete diagnostic results. Save, individual summary and SVG preparation
+are supplemental measurements.
+
+Headless Chrome 158.0.8127.37 used loopback Flask on port 5094, with debug
+and reloader off and browser cache disabled. At 1,000 records, five
+measured navigations per action followed one warm-up. At 1280 × 900,
+saved routines took 7.30 / 9.10 ms, History 64.30 / 72.60 ms, My Progress
+83.50 / 98.30 ms, exercise and metric selection 91.60 / 97.00 ms, and
+period selection 53.40 / 59.00 ms. At 390 × 844, My Progress took
+94.20 / 112.60 ms. Timing was navigation start through `loadEventEnd`
+and includes local requests, DOM parsing and the load event. It does not
+measure completion of visual painting. Both viewports contained the long
+chart scroll areas without page-wide overflow. Filtered SVG preparation
+took 0.80 / 0.90 ms for Weekly Consistency and 0.30 / 0.50 ms for
+Exercise Progression (seven calls after warm-up, through Blob creation).
+All tested SRS loading operations met the five-second target.
+
+To reproduce the browser setup, start an isolated loopback server:
+
+```sh
+PYTHONPATH="$PWD" .venv/bin/python -B scripts/benchmark_progress.py --serve 1000 --port 5094
+```
+
+Use a disposable Chrome profile configured with
+`--proxy-server=http://127.0.0.1:1`. Verify that an external request fails
+while `http://127.0.0.1:5094/progress/` loads. Use DevTools to disable
+cache, set each viewport and read
+`performance.getEntriesByType("navigation")[0].loadEventEnd` after each
+navigation. Use the All time or custom dates 2026-10-15 to 2026-11-20 for
+the fixed historical fixture. For the offline walkthrough, log and save a
+workout, open its summary and History, select a chart exercise, metric and
+period, inspect Personal Records, and use both standard SVG downloads.
+
+In the verified run, the external canary failed with
+`ERR_PROXY_CONNECTION_FAILED`. The app requested only loopback resources.
+The workout was saved locally and both SVGs downloaded. After stopping
+Flask, both SVGs rendered through Quick Look and passed XML checks for
+standalone chart geometry and absence of external links. The walkthrough
+used a browser-level proxy block. It did not disconnect the computer's
+network. Application pages require the local Flask server.
+
+These results cover the single-user standalone prototype on the tested
+hardware and fixture sizes. Repository reads parse the full JSON file and
+saves rewrite it. Analytics and chart rendering scale with the amount of
+history. Production capacity, concurrent users and final integration
+performance were outside these measurements. No performance fixes were
+needed. The full regression suites passed with 149 Python and 17
+JavaScript tests, and the real workout store checksum was unchanged.
+
+### Step 8.3 final usability and implementation review
+
+A visible, isolated browser walkthrough verified the route from a saved
+routine to the completed summary, History and My Progress. A negative
+weight was blocked and the entered repetitions were retained. A corrected
+Bench Press entry of 3 × 8 × 42.5 kg showed 1,020 kg for daily volume and
+1,020 kg as its session record. Exercise, metric and period controls
+worked, benchmark and logged exercises with the same name remained
+distinguishable, and Personal Records kept all-time scope. Both charts
+downloaded using the keyboard and opened locally in Quick Look.
+
+Keyboard checks covered a focused invalid field, scrolling the weekly
+chart with the right arrow, opening its exact-data table with Enter, and
+entering both chart download actions. Headings, form labels, navigation
+state, status associations and chart alternatives were also reviewed in
+the templates. At 1280 × 900 and 390 × 844 the inspected layout contained
+chart scrolling without page-wide overflow. This is a focused usability
+review. Comprehensive assistive-technology testing remains outstanding.
+
+History and Summary previously showed storage timestamps in different
+formats. An evening workout could appear to have been logged the next day
+when stored in UTC. Both screens now display Jamaica time, consistent
+with analytics. The browser showed the same saved workout as 17:11:57
+UTC before the fix and 12:11:57 Jamaica time after it. F4-14 extends
+F4-01 and F4-04 with a cross-midnight regression. A fictional workout
+at 2026-11-25 02:30 UTC must display as November 24 at 21:30 Jamaica
+time on both pages with its stored timestamp intact. The test passed
+and the date-limit fallback remains covered.
+
+The app factory, progress blueprint, service, calculator, repository
+and local export modules keep their separate responsibilities. The
+benchmark and preview use a generated fictional dataset in a
+`TemporaryDirectory` and inject the JSON path into `create_app()`.
+Normal shutdown cleans up that directory. No benchmark rerun was needed.
+
+Group integration dependencies:
+
+- Register the progress blueprint and wire the existing service to the
+  shared app configuration. Align the route prefix, navigation, base
+  template and CSS with the group interface.
+- Replace the fixed mock student with the authenticated student ID and
+  role. Adapt student lookup to provide the display name currently read
+  from `username`. Verify the student isolation boundaries under real
+  authentication. Agree on trainer access and consent before exposing
+  any workout data to trainers.
+- Adapt shared Routine Builder lookups to return only routines owned by
+  that student and supply stable routine and exercise IDs, names and
+  planned sets, repetitions and weights. Preserve historical snapshots.
+- Agree the shared workout JSON path, write ownership and record schema
+  before enabling other modules to write. Repository locking covers one
+  process. The real prototype workout file remains Git-ignored.
+- Review the proposed metrics and related SDS/UML changes with the team.
+  Review the proposed replacement for Scenario 4.6 with the original SRS.
+  Physical storage detection remains outside scope.
+
+The full regression run passed 150 Python and 17 JavaScript tests.
+These include student isolation, escaped dynamic chart text, safe export
+outcomes with mocked browser APIs and the timestamp regression. The
+actual workout storage checksum matched before and after verification.
+The final group test plan belongs to Step 8.4.

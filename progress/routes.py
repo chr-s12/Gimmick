@@ -1,5 +1,6 @@
 from collections import Counter
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
 
@@ -19,6 +20,7 @@ from progress.repository import WorkoutLogStorageError
 
 
 _DEMO_STUDENT_ID = "ST001"
+_JAMAICA = ZoneInfo("America/Jamaica")
 
 
 progress_bp = Blueprint(
@@ -27,6 +29,17 @@ progress_bp = Blueprint(
     template_folder="templates",
     static_folder="static"
 )
+
+
+@progress_bp.app_template_filter("gymmick_completed_time")
+def format_completed_time(completed_at):
+    """Present the workout date in the same timezone as the analytics."""
+    try:
+        local = completed_at.astimezone(_JAMAICA)
+    except OverflowError:
+        # Preserve a readable timestamp at the edge of datetime's year range.
+        return completed_at.isoformat(sep=" ", timespec="seconds")
+    return local.strftime("%Y-%m-%d %H:%M:%S Jamaica time")
 
 
 @progress_bp.route("/")

@@ -14,7 +14,7 @@
                         <h2>{{ workout.routine_name }}</h2>
                         <p>
                             Completed at:
-                            <time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S UTC%z') }}</time>
+                            <time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at | gymmick_completed_time }}</time>
                         </p>
                         <p>Completed exercises: {{ workout.exercises | length }}</p>
                     </div>

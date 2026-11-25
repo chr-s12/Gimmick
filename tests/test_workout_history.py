@@ -48,8 +48,23 @@ class WorkoutHistoryTests(unittest.TestCase):
         data = self.client.get("/progress/history").data
         positions = [data.index(f'>{name}</h2>'.encode()) for name in ("Newer", "Same instant", "Older")]
         self.assertEqual(positions, sorted(positions))
-        self.assertIn(b"2026-11-25 08:00:00 UTC-0500", data)
+        self.assertIn(b"2026-11-25 08:00:00 Jamaica time", data)
         self.assertIn(b"Completed exercises: 1", data)
+
+    def test_history_and_summary_display_previous_jamaica_day_after_utc_midnight(self):
+        completed_at = "2026-11-25T02:30:00+00:00"
+        self.save_workout("W1", "Evening Workout", completed_at)
+        saved = self.storage_path.read_bytes()
+        for path in ("/progress/history", "/progress/workouts/W1"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(
+                    b'<time datetime="2026-11-25T02:30:00+00:00">'
+                    b'2026-11-24 21:30:00 Jamaica time</time>',
+                    response.data,
+                )
+        self.assertEqual(self.storage_path.read_bytes(), saved)
 
     def test_history_handles_offset_timestamp_at_datetime_boundary(self):
         self.save_workout("W1", "Boundary workout", "0001-01-01T00:00:00+01:00")
@@ -60,6 +75,9 @@ class WorkoutHistoryTests(unittest.TestCase):
         self.assertLess(
             response.data.index(b"Later workout"), response.data.index(b"Boundary workout")
         )
+
+        self.assertIn(b"0001-01-01 00:00:00+01:00", response.data)
+        self.assertIn(b"0001-01-01 00:00:00+00:00", response.data)
 
     def test_history_and_summary_are_scoped_to_current_student(self):
         self.save_workout("W1", "My workout")
