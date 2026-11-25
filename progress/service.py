@@ -1,9 +1,10 @@
 
 import math
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from uuid import uuid4
 
+from progress.analytics import StudentProgressAnalytics, calculate_student_analytics
 from progress.models import LoggedExercise, WorkoutLog
 from progress.repository import WorkoutLogRepository
 
@@ -31,6 +32,19 @@ class ProgressService:
             self._repository.get_by_student(student_id),
             key=lambda workout: workout.completed_at,
             reverse=True,
+        )
+
+    def get_analytics(
+        self,
+        student_id: str,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        as_of: datetime | None = None,
+    ) -> StudentProgressAnalytics:
+        """Calculate analytics from the student's current saved workout history."""
+        workouts = self._repository.get_by_student(student_id)
+        return calculate_student_analytics(
+            student_id, workouts, start_date=start_date, end_date=end_date, as_of=as_of,
         )
 
     @staticmethod
