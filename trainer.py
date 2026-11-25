@@ -89,3 +89,24 @@ class Trainer(ActiveUser):
                     del self.__clientList[username]
 
         return True
+
+    def editBooking(self, booking, new_booking_time) -> bool:
+        if booking is None:
+            return False
+
+        student = getattr(booking, 'student', None)
+        old_time = getattr(booking, 'bookingDateTime', None)
+
+        if student is not None and old_time is not None:
+            username = student.username
+            if username in self.__clientList and old_time in self.__clientList[username]:
+                self.__clientList[username].remove(old_time)
+                
+            if username not in self.__clientList:
+                self.__clientList[username] = []
+            self.__clientList[username].append(new_booking_time)
+
+        booking.setStatus("Accepted")
+        booking.setBookingDateTime(new_booking_time) 
+
+        return True
