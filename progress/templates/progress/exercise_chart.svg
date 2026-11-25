@@ -1,0 +1,27 @@
+{% autoescape true %}
+<svg class="exercise-chart" xmlns="http://www.w3.org/2000/svg"
+     width="{{ exercise_chart.width }}" height="{{ exercise_chart.height }}"
+     viewBox="0 0 {{ exercise_chart.width }} {{ exercise_chart.height }}"
+     role="img" aria-labelledby="exercise-chart-title" aria-describedby="exercise-chart-description">
+    <title id="exercise-chart-title">{{ exercise_chart.exercise_name }} · {{ exercise_chart.metric.measurement }} ({{ exercise_chart.metric.unit }})</title>
+    <desc id="exercise-chart-description">Jamaica training dates are spaced by elapsed calendar time. Dots show recorded values. The dashed line connects observations. Open View exercise data for exact dates and values.</desc>
+    {% for label, y in exercise_chart.y_ticks %}
+        <line class="exercise-gridline{% if loop.first %} exercise-baseline{% endif %}"
+              x1="{{ exercise_chart.axis_left }}" x2="{{ exercise_chart.axis_right }}" y1="{{ y }}" y2="{{ y }}"/>
+        <text class="exercise-tick" x="{{ exercise_chart.axis_left - 10 }}" y="{{ y + 5 }}" text-anchor="end">{{ label }}</text>
+    {% endfor %}
+
+    {% for date, x in exercise_chart.x_ticks %}
+        <text class="exercise-tick" x="{{ x }}" y="{{ exercise_chart.baseline + 29 }}" text-anchor="middle">{{ date }}</text>
+    {% endfor %}
+
+    {% if exercise_chart.points | length > 1 %}
+        <polyline class="exercise-trend" points="{% for point in exercise_chart.points %}{{ point.x }},{{ point.y }}{% if not loop.last %} {% endif %}{% endfor %}"/>
+    {% endif %}
+    {% for point in exercise_chart.points %}
+        <circle class="exercise-point" cx="{{ point.x }}" cy="{{ point.y }}" r="4">
+            <title>{{ point.date }} · {{ point.value }} {{ exercise_chart.metric.unit }}</title>
+        </circle>
+    {% endfor %}
+</svg>
+{% endautoescape %}

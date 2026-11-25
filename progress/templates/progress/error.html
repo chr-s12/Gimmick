@@ -1,0 +1,11 @@
+{% extends "progress/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+    <div class="page-heading"><h1>{{ title }}</h1></div>
+    <p class="progress-notice error" role="alert">{{ message }}</p>
+    {% if request.endpoint == 'progress.workout_summary' %}
+        <a class="back-link" href="{{ url_for('progress.workout_history') }}">Back to Workout History</a>
+    {% else %}
+        <a class="back-link" href="{{ url_for('progress.dashboard') }}">Back to My Routines</a>
+    {% endif %}
+{% endblock %}

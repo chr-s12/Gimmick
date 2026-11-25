@@ -1,0 +1,62 @@
+{% from "progress/selection_fields.html" import selection_fields %}
+<section class="progress-card" id="exercise-progression" aria-labelledby="exercise-progression-heading">
+    <h2 id="exercise-progression-heading">Individual Exercise Progression</h2>
+    {% if exercise_options %}
+        <form class="analytics-controls exercise-chart-controls" method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='exercise-progression') }}">
+            {{ selection_fields(selection, ("exercise", "metric")) }}
+            <div>
+                <label for="exercise-chart-exercise">Exercise</label>
+                <select id="exercise-chart-exercise" name="exercise">
+                    {% for option_id, label in exercise_options %}
+                        <option value="{{ option_id }}"{% if option_id == exercise_id %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="exercise-chart-metric">Metric</label>
+                <select id="exercise-chart-metric" name="metric">
+                    {% for key, metric in exercise_metrics.items() %}
+                        <option value="{{ key }}"{% if key == metric_key %} selected{% endif %}>{{ metric.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="progress-button" type="submit">Update chart</button>
+        </form>
+    {% endif %}
+
+    {% if exercise_chart %}
+        <h3>{{ exercise_chart.exercise_name }} · {{ exercise_chart.metric.label }}</h3>
+        <p>{{ exercise_chart.metric.measurement }} ({{ exercise_chart.metric.unit }}) by training date, Jamaica time.</p>
+        {% if exercise_chart.all_zero %}
+            <p>Every recorded value for this metric is zero. Unweighted exercises can still show repetition progress.</p>
+        {% endif %}
+        <div class="exercise-chart-scroll" role="region" aria-label="Exercise progression chart, scroll for more dates" tabindex="0">
+            {% include "progress/exercise_chart.svg" %}
+        </div>
+        <details class="exercise-chart-details">
+            <summary>View exercise data</summary>
+            <table class="exercise-table" aria-label="{{ exercise_chart.exercise_name }} exercise progression data">
+                <thead>
+                    <tr>
+                        <th scope="col">Training date</th>
+                        <th scope="col">{{ exercise_chart.metric.measurement }} ({{ exercise_chart.metric.unit }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for point in exercise_chart.points %}
+                        <tr>
+                            <td><time datetime="{{ point.date }}">{{ point.date }}</time></td>
+                            <td>{{ point.value }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </details>
+    {% elif selected_chart_exercise and period != "all" %}
+        <h3>{{ selected_chart_exercise.exercise_name }}</h3>
+        <p>No performances for this exercise were recorded in the selected period. Choose another exercise or <a href="#analytics-period">change the period</a>.</p>
+    {% else %}
+        <p>No eligible exercise performances were found. Log a completed workout to see exercise progression.</p>
+        <a class="progress-button" href="{{ url_for('progress.dashboard') }}">Log Workout</a>
+    {% endif %}
+</section>

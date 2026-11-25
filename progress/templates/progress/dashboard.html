@@ -1,52 +1,33 @@
+{% extends "progress/base.html" %}
+{% block title %}Log Workout{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <h1>Log Workout</h1>
+        <p>Welcome, {{ student.username }}. Choose a saved routine to log a completed workout.</p>
+    </div>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gymmick | My Progress</title>
-</head>
-<body>
-
-    <h1>Gymmick</h1>
-    <h2>Workout Logging and Progress Tracking</h2>
-
-    <p>Welcome, {{ student.username }}</p>
-
-    <p><a href="{{ url_for('progress.workout_history') }}">Workout History</a></p>
-
-    <h3>My Saved Routines</h3>
-
-    {% for routine in routines %}
-
-        <section>
-            <h4>{{ routine.routine_name }}</h4>
-
-            <p>Exercises: {{ routine.exercises | length }}</p>
-
-            <ul>
-                {% for exercise in routine.exercises %}
-                    <li>
-                        {{ exercise.exercise_name }}:
-                        {{ exercise.sets }} sets ×
-                        {{ exercise.reps }} reps at
-                        {{ exercise.weight_kg }} kg
-                    </li>
-                {% endfor %}
-            </ul>
-
-
-            <a href="{{ url_for('progress.log_workout',
-                            routine_id=routine.routine_id) }}">
-                Log Workout
-            </a>
-        </section>
-
+    <h2>My Saved Routines</h2>
+    {% if routines %}
+        <div class="card-grid">
+            {% for routine in routines %}
+                <section class="progress-card routine-card">
+                    <div class="card-heading">
+                        <h3>{{ routine.routine_name }}</h3>
+                        <span class="meta-tag">{{ routine.exercises | length }} exercises</span>
+                    </div>
+                    <ul class="exercise-list">
+                        {% for exercise in routine.exercises %}
+                            <li>
+                                <strong>{{ exercise.exercise_name }}</strong>
+                                <span>{{ exercise.sets }} sets × {{ exercise.reps }} reps at {{ exercise.weight_kg }} kg</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <a class="progress-button" href="{{ url_for('progress.log_workout', routine_id=routine.routine_id) }}">Log Workout<span class="visually-hidden"> for {{ routine.routine_name }}</span></a>
+                </section>
+            {% endfor %}
+        </div>
     {% else %}
-
-        <p>You do not have any saved routines.</p>
-
-    {% endfor %}
-
-</body>
-</html>
+        <div class="progress-card"><p>You do not have any saved routines.</p></div>
+    {% endif %}
+{% endblock %}

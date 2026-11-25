@@ -1,38 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gymmick | Workout History</title>
-</head>
-<body>
-    <h1>Gymmick</h1>
-    <h2>Workout History</h2>
+{% extends "progress/base.html" %}
+{% block title %}Workout History{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <h1>Workout History</h1>
+        <p>Review your completed workouts, newest first.</p>
+    </div>
 
     {% if workouts %}
-        <ul>
+        <ul class="card-list">
             {% for workout in workouts %}
-                <li>
-                    <h3>{{ workout.routine_name }}</h3>
-                    <p>
-                        Completed at:
-                        <time datetime="{{ workout.completed_at.isoformat() }}">
-                            {{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S UTC%z') }}
-                        </time>
-                    </p>
-                    <p>Completed exercises: {{ workout.exercises | length }}</p>
-                    <p>
-                        <a href="{{ url_for('progress.workout_summary', workout_id=workout.workout_id) }}">
-                            View {{ workout.routine_name }} workout summary
-                        </a>
-                    </p>
+                <li class="progress-card history-card">
+                    <div>
+                        <h2>{{ workout.routine_name }}</h2>
+                        <p>
+                            Completed at:
+                            <time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S UTC%z') }}</time>
+                        </p>
+                        <p>Completed exercises: {{ workout.exercises | length }}</p>
+                    </div>
+                    <a href="{{ url_for('progress.workout_summary', workout_id=workout.workout_id) }}">View {{ workout.routine_name }} workout summary</a>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>You have no completed workouts yet. Choose a saved routine to log your first workout.</p>
+        <div class="progress-card">
+            <p>You have no completed workouts yet. Choose a saved routine to log your first workout.</p>
+        </div>
     {% endif %}
 
-    <p><a href="{{ url_for('progress.dashboard') }}">Back to My Routines</a></p>
-</body>
-</html>
+    <a class="back-link" href="{{ url_for('progress.dashboard') }}">Back to My Routines</a>
+{% endblock %}

@@ -46,7 +46,7 @@ class WorkoutHistoryTests(unittest.TestCase):
         self.assertEqual(service.get_workout_history("ST001"), [newer, tied, older])
         self.assertEqual(self.repository.get_by_student("ST001"), [older, newer, tied])
         data = self.client.get("/progress/history").data
-        positions = [data.index(f'>{name}</h3>'.encode()) for name in ("Newer", "Same instant", "Older")]
+        positions = [data.index(f'>{name}</h2>'.encode()) for name in ("Newer", "Same instant", "Older")]
         self.assertEqual(positions, sorted(positions))
         self.assertIn(b"2026-11-25 08:00:00 UTC-0500", data)
         self.assertIn(b"Completed exercises: 1", data)

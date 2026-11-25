@@ -1,0 +1,7 @@
+{% macro selection_fields(selection, excluded) %}
+    {% for name, value in selection.items() %}
+        {% if name not in excluded and value is not none %}
+            <input type="hidden" name="{{ name }}" value="{{ value }}">
+        {% endif %}
+    {% endfor %}
+{% endmacro %}

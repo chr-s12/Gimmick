@@ -1,144 +1,51 @@
+{% extends "progress/base.html" %}
+{% block title %}Log Workout{% endblock %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gymmick | Log Workout</title>
+{% macro number_field(field, label, planned, minimum, step) %}
+    <div class="number-field">
+        <label for="{{ field }}">{{ label }}</label>
+        <input type="number" id="{{ field }}" name="{{ field }}"
+               value="{{ form_data.get(field, planned if not errors else '') }}"
+               min="{{ minimum }}" step="{{ step }}" required
+               {% if field in errors %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}>
+        {% if field in errors %}
+            <span class="field-error" id="{{ field }}-error">{{ errors[field] }}</span>
+        {% endif %}
+    </div>
+{% endmacro %}
 
-    <style>
-        .error {
-            color: #b91c1c;
-        }
-
-        .invalid {
-            border: 2px solid #b91c1c;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>Gymmick</h1>
-    <h2>Log Workout</h2>
-
-    <h3>{{ routine.routine_name }}</h3>
+{% block content %}
+    <div class="page-heading">
+        <h1>Log Workout</h1>
+        <p>{{ routine.routine_name }}</p>
+    </div>
 
     {% if errors.routine %}
-        <p class="error" role="alert">{{ errors.routine }}</p>
+        <p class="progress-notice error" role="alert">{{ errors.routine }}</p>
     {% else %}
-    <p>Enter your actual completed exercise details.</p>
+        <p>Enter your actual completed exercise details.</p>
+        {% if storage_error %}
+            <p class="progress-notice error" role="alert">{{ storage_error }}</p>
+        {% endif %}
+        {% if errors %}
+            <p class="progress-notice error" role="alert">Please correct the invalid fields below.</p>
+        {% endif %}
 
-    {% if storage_error %}
-        <p class="error" role="alert">{{ storage_error }}</p>
+        <form class="workout-form" method="POST" action="{{ url_for('progress.log_workout', routine_id=routine.routine_id) }}">
+            {% for exercise in routine.exercises %}
+                <fieldset class="progress-card">
+                    <legend>{{ exercise.exercise_name }}</legend>
+                    <p>Planned: {{ exercise.sets }} sets × {{ exercise.reps }} reps at {{ exercise.weight_kg }} kg</p>
+                    <div class="field-grid">
+                        {{ number_field('sets_' ~ loop.index0, 'Completed Sets:', exercise.sets, 1, 1) }}
+                        {{ number_field('reps_' ~ loop.index0, 'Completed Reps:', exercise.reps, 1, 1) }}
+                        {{ number_field('weight_' ~ loop.index0, 'Weight (kg):', exercise.weight_kg, 0, 'any') }}
+                    </div>
+                </fieldset>
+            {% endfor %}
+            <button class="progress-button" type="submit">Save Completed Workout</button>
+        </form>
     {% endif %}
 
-    {% if errors %}
-        <p class="error" role="alert">
-            Please correct the invalid fields below.
-        </p>
-    {% endif %}
-
-    <form method="POST"
-          action="{{ url_for('progress.log_workout',
-                             routine_id=routine.routine_id) }}">
-
-        {% for exercise in routine.exercises %}
-
-            {% set sets_field = 'sets_' ~ loop.index0 %}
-            {% set reps_field = 'reps_' ~ loop.index0 %}
-            {% set weight_field = 'weight_' ~ loop.index0 %}
-
-            <fieldset>
-
-                <legend>{{ exercise.exercise_name }}</legend>
-
-                <p>
-                    Planned: {{ exercise.sets }} sets ×
-                    {{ exercise.reps }} reps at
-                    {{ exercise.weight_kg }} kg
-                </p>
-
-                <p>
-                    <label for="{{ sets_field }}">
-                        Completed Sets:
-                    </label>
-
-                    <input type="number"
-                           id="{{ sets_field }}"
-                           name="{{ sets_field }}"
-                           value="{{ form_data.get(sets_field, exercise.sets if not errors else '') }}"
-                           class="{{ 'invalid' if sets_field in errors else '' }}"
-                           min="1"
-                           step="1"
-                           required>
-
-                    {% if sets_field in errors %}
-                        <span class="error">
-                            {{ errors[sets_field] }}
-                        </span>
-                    {% endif %}
-                </p>
-
-                <p>
-                    <label for="{{ reps_field }}">
-                        Completed Reps:
-                    </label>
-
-                    <input type="number"
-                           id="{{ reps_field }}"
-                           name="{{ reps_field }}"
-                           value="{{ form_data.get(reps_field, exercise.reps if not errors else '') }}"
-                           class="{{ 'invalid' if reps_field in errors else '' }}"
-                           min="1"
-                           step="1"
-                           required>
-
-                    {% if reps_field in errors %}
-                        <span class="error">
-                            {{ errors[reps_field] }}
-                        </span>
-                    {% endif %}
-                </p>
-
-                <p>
-                    <label for="{{ weight_field }}">
-                        Weight (kg):
-                    </label>
-
-                    <input type="number"
-                           id="{{ weight_field }}"
-                           name="{{ weight_field }}"
-                           value="{{ form_data.get(weight_field, exercise.weight_kg if not errors else '') }}"
-                           class="{{ 'invalid' if weight_field in errors else '' }}"
-                           min="0"
-                           step="any"
-                           required>
-
-                    {% if weight_field in errors %}
-                        <span class="error">
-                            {{ errors[weight_field] }}
-                        </span>
-                    {% endif %}
-                </p>
-
-            </fieldset>
-
-            <br>
-
-        {% endfor %}
-
-        <button type="submit">
-            Save Completed Workout
-        </button>
-
-    </form>
-    {% endif %}
-
-    <p>
-        <a href="{{ url_for('progress.dashboard') }}">
-            Back to My Routines
-        </a>
-    </p>
-
-</body>
-</html>
+    <a class="back-link" href="{{ url_for('progress.dashboard') }}">Back to My Routines</a>
+{% endblock %}

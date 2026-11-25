@@ -15,9 +15,11 @@ python3.12 -m venv .venv
 .venv/bin/python -B -m flask --app app run
 ```
 
-Open [My Progress](http://127.0.0.1:5000/progress/) to select a saved routine
-and log a completed workout. A successful save opens the workout summary.
-Workout History lists that student's saved workouts, newest first.
+Open [Log Workout](http://127.0.0.1:5000/progress/) to select a saved
+routine. A successful save opens its summary. [History](http://127.0.0.1:5000/progress/history)
+lists saved workouts newest first. [My Progress](http://127.0.0.1:5000/progress/analytics)
+shows Weekly Consistency, Individual Exercise Progression, and All-time
+Personal Records from the student's saved workouts.
 
 This standalone prototype always uses fictional student ST001. The
 students and saved routines come from the JSON files in `fixtures/`
@@ -34,14 +36,15 @@ Tests use an isolated file by passing `WORKOUT_STORAGE_PATH` to the app factory.
 
 ## Feature 4 architecture
 
-- The Jinja templates collect completed exercise values and display saved records.
-- The Flask Blueprint handles requests, status codes, and navigation.
-- `ProgressService` validates completed workouts and orders saved history.
+- Jinja templates and scoped CSS render shared navigation, forms, records, and charts.
+- The Flask Blueprint handles requests, selection validation, and HTTP responses.
+- `ProgressService` validates workouts and supplies saved history to the analytics calculators.
+- `progress.analytics` computes the three metrics. `progress.charts` prepares SVG coordinates and labels.
 - `WorkoutLogRepository` manages JSON reads, ownership-scoped lookups, and atomic writes.
 - `WorkoutLog` and `LoggedExercise` represent and serialise workout snapshots.
 
-Logging, saving, the summary, and workout history are implemented. Analytics,
-charts, and downloads are planned work.
+The standalone app supports logging, history, summaries, analytics, and
+dashboard charts. Chart downloads and group integration remain pending.
 
 ## Feature 4 design merge notes
 
@@ -110,8 +113,8 @@ training volume, and Personal Records in place of Stronger/Weaker/Stagnant.
 They support the SRS goals of showing accurate workout analytics and
 updating them after logged workouts (AC-04.1–AC-04.3). They revise the SDS
 and UML and are pending team approval. Weekly Consistency, Individual
-Exercise Progression, and Personal Records are implemented as standalone
-calculations. Dashboard integration and exports are planned.
+Exercise Progression, and Personal Records are implemented in the
+standalone dashboard. Exports are planned.
 
 `progress.analytics.calculate_weekly_consistency(workouts, as_of=None)` takes
 one student's completed `WorkoutLog` objects. `ProgressService` supplies
@@ -134,8 +137,7 @@ Calculation uses the system's America/Jamaica timezone data via
 `zoneinfo`. Naive timestamps, unsupported conversions, and a reference
 week with an unrepresentable Sunday (when returning history) raise
 `ValueError`. An eligible record that cannot be converted to a Jamaica
-date stops the calculation with its ID in the error. Dashboard
-date-range filtering remains planned.
+date stops the calculation with its ID in the error.
 
 ### Step 5.3 Individual Exercise Progression
 
@@ -238,8 +240,9 @@ eligible history has empty metrics and both flags false. A student with
 history outside the selected period still has all-time records and
 `has_workouts = True`, while `has_workouts_in_period = False`.
 
-The calculators remain independent of Flask and storage. Team approval
-of the analytics design, dashboard integration, and export work is pending.
+The calculators remain independent of Flask and storage. The
+standalone dashboard uses the combined result. Team approval of the
+proposed design and chart exports are pending.
 
 ### Step 5.6 analytics service integration
 
@@ -261,6 +264,173 @@ their distinct flags. Storage and calculation errors propagate to callers.
 Each call derives metrics from saved workouts, so a successful save is
 visible to the next analytics request. Logging and analytics retrieval
 are separate. The saved workouts are the source of truth and no analytics
-cache or separate analytics file is needed. Backend refresh is implemented.
-Dashboard refresh after a successful save (AC-04.3 at the browser level)
-and chart and download work remain pending.
+cache or separate analytics file is needed. My Progress displays the
+refreshed data on the next visit.
+
+### Step 6.1 Feature 4 presentation
+
+Feature 4 pages share `progress/base.html` and use the Blueprint's local
+`css/feature4.css`. The layout has a skip link and highlights the current
+navigation destination. The CSS scopes the provisional neutral and blue
+palette, responsive cards, forms, and focus styles to Feature 4.
+
+- **Log Workout** (`/progress/`) lists saved routines and leads to the
+  existing logging form.
+- **History** (`/progress/history`) lists saved workouts and leads to
+  their summaries.
+- **My Progress** (`/progress/analytics`) displays Weekly Consistency,
+  Individual Exercise Progression, and all-time Personal Records.
+
+The feature uses system fonts and local assets. A shared group layout can
+replace the local header and navigation when the team integrates Feature 4.
+The proposed chart approach is locally
+generated SVG with lightweight JavaScript where useful, so charts can work
+offline and support later exports. The group has yet to approve that
+approach and the final palette.
+
+### Step 6.2 live My Progress dashboard
+
+`GET /progress/analytics` uses the existing mock student identity and
+calls `ProgressService.get_analytics()` with all eligible history. Each
+page request reads the current persisted workouts. A successful workout
+save still redirects to its summary. Visiting My Progress afterward
+shows the refreshed data.
+
+The dashboard shows active training days for Monday–Sunday weeks.
+Exercise Progression uses daily values for each exercise. All-time Personal
+Records show available weight and session-volume bests, repetition records at each
+weight, and their first-achieved dates. An unweighted exercise can show
+repetition records even when it has no weight or session-volume best.
+
+The dashboard shows a Log Workout link and an explanation when the student
+has no eligible workouts. Storage and calculation errors use the shared
+error page with HTTP 500 and server-side diagnostic logging. The route
+uses the existing service interface as a presentation-layer addition to
+the proposed design.
+
+### Step 6.3 Weekly Consistency chart
+
+My Progress displays one vertical SVG bar per Monday–Sunday week in
+chronological order. Each active training day adds the same height on a
+fixed zero-to-seven scale. Monday dates and exact counts label the bars.
+Zero-day weeks show a baseline marker and a visible zero. The incomplete
+current week uses a dashed outline and a text label. A partially selected
+week has its own text label whenever the service supplies that flag.
+
+The route passes the service results to `build_weekly_chart()` in
+`progress/charts.py` for SVG coordinates. The local Jinja component
+`progress/weekly_chart.svg` draws the chart using those results. CSS
+preserves bar and label sizes inside a keyboard-focusable horizontal
+scroll region. The expandable weekly data table supplies both calendar
+dates, exact counts, and status for each week. The empty-history page
+shows a logging link.
+
+The presentation geometry and SVG markup can be reused for a future
+export. A standalone SVG will need its styles embedded. Downloads remain a
+future milestone. Team approval of the proposed SDS and UML revisions is pending.
+
+### Step 6.4 Individual Exercise Progression chart
+
+The Exercise and Metric selects submit GET parameters `exercise` and
+`metric` to My Progress. The page returns to the exercise section with
+both selections preserved. Exercise options are based on the current
+student's history and use stable IDs. Duplicate names include their IDs.
+The first exercise in ID order and Weight are the defaults. Unavailable
+exercise IDs and unknown metric keys fall back to the relevant defaults.
+Each request reads fresh analytics from the existing service.
+
+Choose Weight for daily peak external weight (kg), Repetitions for daily
+peak reps per set, or Volume for daily combined sets × reps × weight
+(kg) for that exercise. The weight and reps peaks may come from different
+performances. `build_exercise_chart()` maps the selected daily series
+onto elapsed Jamaica calendar days and a zero-based vertical scale with
+rounded ticks. The number of date labels is capped at five. Dots are the
+recorded observations, and dashed segments connect consecutive observations
+across gaps. The chart adds no data points between them.
+
+The Jinja templates `progress/exercise_progression.html` and
+`progress/exercise_chart.svg` render the controls and SVG. A one-date
+history has a centred dot. Constant histories keep a valid scale, and
+all-zero weights and volumes remain visible on the baseline. An unweighted
+exercise can still have a repetition history. The empty exercise state
+offers a link to Log Workout. On narrow screens the chart scrolls inside
+its card, and View exercise data expands to show the exact dates and
+values for the selected metric.
+
+The form preserves the applied period. Phase 7 can reuse the selected
+series and standalone SVG template with embedded styles. Downloads and
+team approval of the proposed SDS and UML revisions remain pending.
+
+### Step 6.5 Personal Records
+
+Personal Records shows all-time achievements for one exercise using
+`ExercisePersonalRecords` and its existing record values. Each card
+shows the first-achievement date in Jamaica. Heaviest Weight uses the
+best positive external load. Repetition Record shows the best reps per
+set at one recorded weight. Highest Session Volume uses the best
+exercise-specific volume in one workout. Each request reads fresh
+analytics from the existing service.
+
+The offline GET forms use `record_exercise` and `record_weight`. The
+first exercise in stable ID order is the default. Duplicate names show
+their IDs. Exercise changes default the repetition card to its highest
+recorded weight. The weight selector appears when multiple weights
+exist and retains the full stored decimal precision. Invalid selections
+fall back to the applicable default. Unweighted repetition records use
+an Unweighted label. Exclusively unweighted exercises omit positive
+weight and session-volume cards.
+
+`progress/personal_records.html` renders the selector and responsive
+cards. The shared `progress/selection_fields.html` macro preserves the
+other section's resolved selections in both directions. It also
+preserves the selected period and any custom bounds. Records remain
+all-time regardless of dashboard dates. Downloads and team approval of
+the proposed SDS and UML changes are pending.
+
+### Step 6.6 Analytics periods and dashboard refresh
+
+My Progress offers All time (the default), Last 30 days, Last 7 days and
+Custom date range. The relative presets include today in Jamaica and
+the preceding 29 or six calendar dates. `resolve_period()` in
+`progress/periods.py` resolves the inclusive bounds. The controller
+uses the same UTC reference instant for that resolution and
+`ProgressService.get_analytics()`. The custom period accepts either
+or both ISO dates. A missing start includes earlier eligible history,
+and a missing end includes eligible history through the reference
+instant. Future dates are allowed, but future workouts remain excluded.
+Invalid periods, invalid dates and reversed bounds return HTTP 400
+with a correction form. Storage and calculation errors keep the
+existing HTTP 500 response.
+
+`progress/analytics_period.html` renders the native GET controls and
+applied dates. Choose Custom date range to use the date fields. Reset to
+All time keeps the exercise, metric and record selections. The chart
+and record forms carry the period key and only send dates for a custom
+period, so relative presets re-resolve on each request. A future
+download route can reuse the resolver and the same query parameters.
+
+Weekly Consistency counts only training dates in range. The chart and
+detail table identify current and partial weeks separately, retaining
+zero-day weeks within the backend's history boundaries. The exercise
+selector uses all-time eligible exercise names from Personal Records.
+When the chosen exercise has no points in range, it stays selected
+with an explanation. A period with no workouts is distinct from an
+account with no history. Personal Records stay all-time in either chart
+view.
+
+Opening My Progress after saving a workout recalculates the dashboard.
+The new workout affects the charts for periods that include its Jamaica
+training date and can update all-time records even when outside the
+chart period. The mock student identity remains in use. SVG downloads
+and team integration are pending, along with approval of the proposed
+SDS and UML revisions.
+
+### Phase 6 verification and integration
+
+The standalone dashboard was verified with the mock student identity.
+The design merge should capture the analytics route, the period resolver,
+the shared GET selection fields, and the SVG chart presentation models.
+Group integration needs the shared student identity, routine provider, and
+layout. Team approval of the proposed SDS and UML metrics remains pending.
+AC-04.4 and scenarios 4.5 and 4.6 depend on chart downloads. Scenario 4.3
+has verified charts and still requires its save option.
