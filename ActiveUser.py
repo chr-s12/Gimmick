@@ -12,6 +12,8 @@ class ActiveUser:
         self._idnum = idnum
         self._routine_list: list[Routine] = []
 
+    def getUserId(self):
+        return self._idnum
     def buildRoutine(self,routineName: str,exercises: list[Exercise],isPublic: bool = False) -> Routine:
         if not exercises:
             raise ValueError("Cannot build a routine with no exercises.")
@@ -54,8 +56,15 @@ class ActiveUser:
             self.userSave()
         return deleted
 
+    def getRoutineById(self, routine_id: str) -> Routine | None:
+        for r in self._routine_list:
+            if r.getRoutineId() == routine_id:
+                return r  
+        return None       
+
     def logWorkout(self, routine: Routine) -> None:
         pass
+
 
     def userSave(self, user: 'ActiveUser | None' = None) -> bool:
         target_user = user if user is not None else self
@@ -83,3 +92,23 @@ class ActiveUser:
         with open(users_file_path, "w") as f:
             json.dump(users, f, indent=4)
         return True
+
+    def loadUser(cls, idnum: str) -> 'ActiveUser | None':
+        if not users_file_path.exists():
+            return None
+        with open(users_file_path, "r") as f:
+            try:
+                users = json.load(f)
+            except json.JSONDecodeError:
+                return None
+
+        record = next((u for u in users if u.get("ID Number") == idnum), None)
+        if record is None:
+            return None
+
+        user = cls(username=record["Username"], idnum=record["ID Number"])
+        all_routines = {r.getRoutineId(): r for r in Routine.loadAllRoutines()}
+        for r_id in record.get("Routine List", []):
+            if r_id in all_routines:
+                user._routine_list.append(all_routines[r_id])
+        return user

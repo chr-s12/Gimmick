@@ -5,7 +5,6 @@ from pathlib import Path
 
 routine_file_path = Path("routines.json")
 
-
 class Routine:
     def __init__(self, routine_name: str, exercises: list[Exercise], is_public: bool = False):
         if not exercises:
@@ -97,6 +96,31 @@ class Routine:
             json.dump(updated_routines, f, indent=4)
 
         return True
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Routine':
+        exercises = [Exercise.from_dict(ex) for ex in data.get("exercises", [])]
+        routine = cls(
+            routine_name=data["routineName"],
+            exercises=exercises,
+            is_public=data.get("isPublic", False)
+        )
+        routine._routineId = data["routineId"]
+        return routine
+
+    @classmethod
+    def loadAllRoutines(cls) -> list['Routine']:
+        if not routine_file_path.exists():
+            return []
+        with open(routine_file_path, "r") as f:
+            try:
+                raw = json.load(f)
+            except json.JSONDecodeError:
+                return []
+        return [cls.from_dict(r) for r in raw]
+
+    @classmethod
+    def getPublicRoutines(cls) -> list['Routine']:
+        return [r for r in cls.loadAllRoutines() if r.getIsPublic()]
 
 
             

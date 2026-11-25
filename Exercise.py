@@ -1,4 +1,4 @@
-from Gimmick import *
+
 class Exercise:
     def __init__(self, excer_name: str, num_sets: int, num_reps: int, rest_time: int, weight_kg: int, is_complete: bool = False):
         # Private attributes 
@@ -56,3 +56,13 @@ class Exercise:
             "isComplete": self._isComplete,
             "weightKG": self._weightKG
         }
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Exercise':
+        return cls(
+            excer_name=data["excerName"],
+            num_sets=data["numSets"],
+            num_reps=data["numReps"],
+            rest_time=data["restTime"],
+            weight_kg=data["weightKG"],
+            is_complete=data.get("isComplete", False)
+        )
