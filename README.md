@@ -44,7 +44,8 @@ Tests use an isolated file by passing `WORKOUT_STORAGE_PATH` to the app factory.
 - `WorkoutLog` and `LoggedExercise` represent and serialise workout snapshots.
 
 The standalone app supports logging, history, summaries, analytics, and
-dashboard charts. Chart downloads and group integration remain pending.
+dashboard charts, including SVG downloads for Weekly Consistency and
+Individual Exercise Progression. Group integration remains pending.
 
 ## Feature 4 design merge notes
 
@@ -114,7 +115,8 @@ They support the SRS goals of showing accurate workout analytics and
 updating them after logged workouts (AC-04.1–AC-04.3). They revise the SDS
 and UML and are pending team approval. Weekly Consistency, Individual
 Exercise Progression, and Personal Records are implemented in the
-standalone dashboard. Exports are planned.
+standalone dashboard. Weekly Consistency and Exercise Progression
+can be saved as standalone SVGs.
 
 `progress.analytics.calculate_weekly_consistency(workouts, as_of=None)` takes
 one student's completed `WorkoutLog` objects. `ProgressService` supplies
@@ -242,7 +244,7 @@ history outside the selected period still has all-time records and
 
 The calculators remain independent of Flask and storage. The
 standalone dashboard uses the combined result. Team approval of the
-proposed design and chart exports are pending.
+proposed design remains pending.
 
 ### Step 5.6 analytics service integration
 
@@ -325,9 +327,8 @@ scroll region. The expandable weekly data table supplies both calendar
 dates, exact counts, and status for each week. The empty-history page
 shows a logging link.
 
-The presentation geometry and SVG markup can be reused for a future
-export. A standalone SVG will need its styles embedded. Downloads remain a
-future milestone. Team approval of the proposed SDS and UML revisions is pending.
+Phase 7 reuses the presentation geometry and SVG markup and embeds the
+chart styles for independent viewing. Team approval of the proposed SDS and UML revisions is pending.
 
 ### Step 6.4 Individual Exercise Progression chart
 
@@ -357,9 +358,8 @@ offers a link to Log Workout. On narrow screens the chart scrolls inside
 its card, and View exercise data expands to show the exact dates and
 values for the selected metric.
 
-The form preserves the applied period. Phase 7 can reuse the selected
-series and standalone SVG template with embedded styles. Downloads and
-team approval of the proposed SDS and UML revisions remain pending.
+The form preserves the applied period. Phase 7 exports the currently
+selected series with embedded styles. Team approval of the proposed SDS and UML revisions remain pending.
 
 ### Step 6.5 Personal Records
 
@@ -384,8 +384,8 @@ weight and session-volume cards.
 cards. The shared `progress/selection_fields.html` macro preserves the
 other section's resolved selections in both directions. It also
 preserves the selected period and any custom bounds. Records remain
-all-time regardless of dashboard dates. Downloads and team approval of
-the proposed SDS and UML changes are pending.
+all-time regardless of dashboard dates. Team approval of the proposed
+SDS and UML changes is pending.
 
 ### Step 6.6 Analytics periods and dashboard refresh
 
@@ -421,9 +421,8 @@ view.
 Opening My Progress after saving a workout recalculates the dashboard.
 The new workout affects the charts for periods that include its Jamaica
 training date and can update all-time records even when outside the
-chart period. The mock student identity remains in use. SVG downloads
-and team integration are pending, along with approval of the proposed
-SDS and UML revisions.
+chart period. The mock student identity remains in use. Group integration
+and approval of the proposed SDS and UML revisions are pending.
 
 ### Phase 6 verification and integration
 
@@ -432,5 +431,206 @@ The design merge should capture the analytics route, the period resolver,
 the shared GET selection fields, and the SVG chart presentation models.
 Group integration needs the shared student identity, routine provider, and
 layout. Team approval of the proposed SDS and UML metrics remains pending.
-AC-04.4 and scenarios 4.5 and 4.6 depend on chart downloads. Scenario 4.3
-has verified charts and still requires its save option.
+Phase 7 adds the chart save option and standalone file access for AC-04.4
+and Scenarios 4.3 and 4.5. Scenario 4.6 still requires actual
+insufficient-storage verification.
+
+### Step 7.1 SVG export foundation
+
+The proposed offline export format is SVG. The local ES module
+`progress/static/js/chart_export.js` takes an already rendered dashboard
+SVG. Step 7.1 introduced the reusable component before chart controls.
+`chartDimensions()` validates the SVG root and intrinsic geometry.
+`prepareStandaloneSvg()` copies the chart into a detached SVG using a
+limited set of graphical elements and attributes. It preserves the
+original dimensions and full viewBox, even if only part of the chart is
+visible on screen. It inlines the required computed paints, strokes,
+fonts and label styles, and adds a white background. The original
+dashboard chart is left intact. Links, scripts, event handlers, hidden
+graphics and remote paint references are excluded.
+
+The caller can supply a title, description, measurement, exercise,
+metric, unit, applied period, start and end dates, and notes from the
+displayed chart. The module writes those values as accessible SVG text
+through the DOM and does not recalculate relative dates or analytics.
+`serializeSvg()` uses the browser XML serializer, `createSvgBlob()`
+creates an `image/svg+xml` Blob, and `makeChartFilename()` builds a
+bounded filename from descriptive components such as the chart or
+exercise name, metric and optional dates. The chart controls should
+supply only presentation data and keep account identifiers out of those
+values. No storage, export route or JavaScript dependency is required.
+
+`exportChart()` prepares the displayed snapshot and dispatches the save
+method. In auto mode, `supportsDirectSave()` checks for a secure context
+with a callable `showSaveFilePicker()`. Invoke it from the user's actual
+save action to retain browser activation. `saveSvgDirect()` reports a
+save only after writing and closing the stream. Picker dismissal stops
+the operation without downloading a second copy. Browsers can also abort
+a picker for a restricted selection. Unsupported browsers
+can use `downloadSvg()`, which clicks a temporary Blob link, removes
+the link, and revokes its object URL after a delay. That result confirms
+download initiation only.
+
+Status codes distinguish preparation failure, unsupported direct save,
+picker dismissal, permission denial, detectable storage or quota errors,
+other write failures, and download initiation failure. Error details are
+available to callers separately from the outcome status. A quota signal
+alone cannot establish insufficient physical disk space. Some browsers
+cannot report that specific failure. Scenario 4.6 still needs verification
+in a safe, isolated failure environment. Chart-specific metadata wiring,
+download controls, and final acceptance checks are pending.
+
+Browser API references:
+[Chrome File System Access guide](https://developer.chrome.com/docs/capabilities/web-apis/file-system-access)
+and [WHATWG File System Standard](https://fs.spec.whatwg.org/).
+
+Run the dependency-free export helper checks with Node.js 22 or later.
+
+```sh
+node --input-type=module --check < progress/static/js/chart_export.js
+node --test tests/test_chart_export.mjs
+```
+
+### Step 7.2 Weekly Consistency download
+
+The **Download SVG** button next to Weekly Consistency uses the local
+`weekly_chart_download.js` module. It targets the displayed weekly SVG
+and exports that snapshot without refreshing analytics or changing the
+dashboard. Valid zero-day charts can be downloaded. The control appears
+when a weekly chart is available.
+
+The module reads the applied period, inclusive boundaries, plotted
+Monday–Sunday extent, and relevant week statuses from server-rendered
+attributes. Relative periods retain the resolved dates from that page
+load. Custom ranges with an omitted bound show From or Through, and
+All time has neither bound. The standalone image includes a visible
+title, measurement, period and week context above the complete chart.
+The chart retains its own dimensions and viewBox. Styling is inline
+and the SVG includes accessible title and description text.
+
+All time uses `weekly-consistency.svg`. Bounded ranges add their dates
+as `START-to-END`, while open-ended ranges use `from-START` or
+`through-END`. The shared filename helper sanitises the result.
+
+The button uses the standard browser download path and announces
+initiation. The direct-save helper remains available in the shared
+module for the later save interaction. Browser verification checked
+keyboard activation, desktop and mobile layout, and preservation of
+the displayed chart after a subsequent workout. A downloaded 15-week
+SVG matched the selected dates, values and indicators. Quick Look
+rendered it after the local Flask preview stopped.
+
+Shared save controls and feedback remain pending. Direct file saving and insufficient physical storage
+were not verified with the weekly button. Scenario 4.6 remains open.
+
+### Step 7.3 Individual Exercise Progression downloads
+
+**Download SVG** beside the selected exercise and metric exports the
+displayed Weight, Repetitions, or Volume chart. The browser uses the
+current SVG and its server-resolved exercise, metric, and period. The
+export keeps the full chart viewport, axes, line and markers, including
+each point's exact value and date. It adds a visible title, exercise,
+metric, measurement and plotted dates above the chart. The applied
+period and its available inclusive bounds are also carried in the
+accessible description. The SVG is self-contained and readable offline.
+
+`exerciseExportOptions()` prepares the displayed chart metadata.
+Both chart modules use `describePeriod()` and `bindChartDownload()`
+from the local `chart_download.js` helper for consistent period labels,
+button binding, and download initiation feedback. The standard browser
+download path initiates a download. The app cannot confirm a local write
+through that mechanism.
+
+Filenames use `EXERCISE-METRIC-progression.svg`, with the applicable
+date suffix from the weekly convention. Names are sanitised and shortened
+when needed while retaining the metric and date suffix. Duplicate exercise
+names use their selector label and an ID-based filename key to distinguish
+the files. Long or punctuated IDs use a short deterministic fingerprint
+to preserve both the distinguishing key and the metric and date suffixes.
+All time adds no date suffix. Empty exercise periods have no exercise
+download control. Valid unweighted histories retain their zero-weight or
+zero-volume points, and single recorded performances export one marker.
+
+Browser verification at desktop and mobile sizes produced six exercise
+SVG files and a Weekly Consistency regression download. The three
+Bench Press metrics kept all 13 points. A Last 7 days export kept its
+original two points after another tab saved a workout. Zero-volume and
+single-point files parsed successfully. Quick Look rendered the three
+all-time metrics and the filtered volume SVG after Flask stopped.
+
+Step 7.4 added shared direct-save controls and error handling. Actual
+insufficient physical storage remains unverified.
+
+### Step 7.4 Shared chart saving and feedback
+
+In My Progress, use the action beside either Weekly Consistency or the
+selected Exercise Progression chart. In a secure context that exposes
+a native save picker, **Save SVG** lets you choose a destination and
+**Download SVG** uses the browser's normal downloads. Browsers without
+the picker show **Download SVG** as the primary action. Open the resulting
+file from the selected folder or the browser's downloads in an SVG viewer.
+
+`bindChartDownload()` chooses the available controls, invokes the same
+snapshot exporter directly in the click handler, and guards both actions
+for that chart while a save is pending. The active button keeps keyboard
+focus. Each chart has its own status live region. The direct path reports
+success only when writing and closing both succeed. The download path
+reports initiation. Cancelling a picker reports cancellation. Permission
+denial and write failures report their own messages and leave the
+explicit download action available without starting it automatically.
+Preparation failures have separate feedback. Technical details are kept
+out of the interface.
+
+When the browser reports `QuotaExceededError`, the interface identifies
+a browser storage or quota problem and suggests checking available space
+or choosing another destination. An ambiguous write error receives
+generic feedback. The [File System Standard](https://fs.spec.whatwg.org/)
+distinguishes browser storage quota from local disk errors, and standard
+downloads do not expose a reliable write result to the application.
+The [File System Access picker specification](https://wicg.github.io/file-system-access/)
+also requires transient user activation.
+
+Desktop and mobile browser checks created both standard SVG downloads.
+Their full chart viewBoxes, period metadata and values were checked on
+disk. Quick Look rendered both files after Flask stopped. The native
+picker request entered the pending state in the in-app browser, where
+automation could not operate the destination dialog. Mocked tests
+covered confirmed write and close, cancellation, permission and quota
+failures, generic write errors, cleanup and overlapping attempts.
+Scenario 4.6 remains outstanding for real insufficient-space verification.
+The browser was not exercised against a real write failure. A disposable
+disk image was considered, but the native picker could not be driven to
+a controlled destination in the test environment.
+
+To check direct saving manually, open the local My Progress page in
+desktop Chrome. Choose **Save SVG**, select a new file in a writable
+folder, and wait for “Visualisation saved successfully.” Open that file
+in an SVG viewer. Then start another save and cancel the picker.
+Confirm “Save cancelled” and check that the browser did not start a
+download. The secondary **Download SVG** action remains available.
+
+### Phase 7 final verification and design handoff
+
+An isolated desktop walkthrough saved a workout, refreshed My Progress
+and downloaded a Last 7 days Weekly Consistency SVG. A mobile walkthrough
+chose Bicep Curls, selected Volume and downloaded a Last 30 days
+Exercise Progression SVG. Keyboard activation worked for both. Both
+downloads preserved the displayed SVG and the resolved date bounds.
+The saved files were checked on disk and rendered in Quick Look after
+Flask stopped. These checks support AC-04.4 and Scenarios 4.3 and 4.5
+for the standalone mock-student prototype.
+
+Desktop Chrome exposed the native-save action. The browser reported
+cancellation, restored the controls and kept the download option
+available. Confirmed native writing and closing remain covered by mocks.
+Actual write failures and insufficient physical device storage are still
+unverified, so Scenario 4.6 remains partially implemented.
+
+For the proposed SDS and UML revision, record the browser-side SVG
+snapshot preparation, chart-specific metadata adapters and shared save
+and feedback handler in the presentation layer. The snapshot comes
+from the existing chart markup and needs no export endpoint or
+persistent export data. Phase 8 application verification and Phase 9
+work remain open. Group integration still needs real authentication,
+shared student and routine providers, and approval of the revised
+metrics.

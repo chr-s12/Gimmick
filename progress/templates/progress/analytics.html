@@ -1,5 +1,13 @@
 {% extends "progress/base.html" %}
 {% block title %}My Progress{% endblock %}
+{% block page_resources %}
+    {% if not period_error and analytics.weekly_consistency %}
+        <script type="module" src="{{ url_for('progress.static', filename='js/weekly_chart_download.js') }}"></script>
+    {% endif %}
+    {% if exercise_chart %}
+        <script type="module" src="{{ url_for('progress.static', filename='js/exercise_chart_download.js') }}"></script>
+    {% endif %}
+{% endblock %}
 {% block content %}
     <div class="page-heading">
         <h1>My Progress</h1>
@@ -22,9 +30,33 @@
         {% endif %}
         <div class="analytics-grid">
             <section class="progress-card analytics-primary">
-                <h2 id="weekly-consistency">Weekly Consistency</h2>
+                <div class="card-heading">
+                    <h2 id="weekly-consistency">Weekly Consistency</h2>
+                    {% if analytics.weekly_consistency %}
+                        {% set weeks = analytics.weekly_consistency %}
+                        <div class="chart-save-actions">
+                            <button class="progress-button" id="download-weekly-chart" type="button" hidden
+                                    aria-label="Download SVG for Weekly Consistency"
+                                    aria-controls="weekly-consistency-chart"
+                                    aria-describedby="weekly-download-status"
+                                    data-period="{{ period_labels[period] }}"
+                                    data-start-date="{{ analytics.start_date or '' }}"
+                                    data-end-date="{{ analytics.end_date or '' }}"
+                                    data-first-week="{{ weeks[0].week_start }}"
+                                    data-last-week-end="{{ weeks[-1].week_end }}"
+                                    {% if weeks | selectattr('is_current_week') | first %}data-current-week="true"{% endif %}
+                                    {% if weeks | selectattr('is_partial_week') | first %}data-partial-week="true"{% endif %}>
+                                Download SVG
+                            </button>
+                            <button class="chart-download-alternative" id="download-weekly-chart-alternative" type="button" hidden
+                                    aria-label="Download SVG for Weekly Consistency" aria-controls="weekly-consistency-chart"
+                                    aria-describedby="weekly-download-status">Download SVG</button>
+                        </div>
+                    {% endif %}
+                </div>
                 <p>Active training days per Monday–Sunday week, Jamaica time.</p>
                 {% if analytics.weekly_consistency %}
+                    <p id="weekly-download-status" class="chart-download-status" role="status"></p>
                     <div class="weekly-chart-scroll" role="region" aria-label="Weekly Consistency chart, scroll for more weeks" tabindex="0">
                         {% include "progress/weekly_chart.svg" %}
                     </div>

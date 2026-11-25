@@ -1,5 +1,5 @@
 {% autoescape true %}
-<svg class="exercise-chart" xmlns="http://www.w3.org/2000/svg"
+<svg class="exercise-chart" id="exercise-progression-chart" xmlns="http://www.w3.org/2000/svg"
      width="{{ exercise_chart.width }}" height="{{ exercise_chart.height }}"
      viewBox="0 0 {{ exercise_chart.width }} {{ exercise_chart.height }}"
      role="img" aria-labelledby="exercise-chart-title" aria-describedby="exercise-chart-description">

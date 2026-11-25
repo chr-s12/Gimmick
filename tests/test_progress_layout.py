@@ -60,6 +60,25 @@ class ProgressLayoutTests(unittest.TestCase):
             self.assertIn(b".gymmick-progress", response.data)
             self.assertNotIn(b"@import", response.data)
 
+    def test_chart_export_module_is_served_locally(self):
+        with self.client.get("/progress/static/js/chart_export.js") as response:
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(response.mimetype, ("text/javascript", "application/javascript"))
+            self.assertIn(b"export async function exportChart", response.data)
+
+    def test_weekly_download_integration_module_is_served_locally(self):
+        with self.client.get("/progress/static/js/weekly_chart_download.js") as response:
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(response.mimetype, ("text/javascript", "application/javascript"))
+            self.assertIn(b'from "./chart_export.js"', response.data)
+
+    def test_exercise_download_modules_are_served_locally(self):
+        for module in ("exercise_chart_download", "chart_download"):
+            with self.subTest(module=module):
+                with self.client.get(f"/progress/static/js/{module}.js") as response:
+                    self.assertEqual(response.status_code, 200)
+                    self.assertIn(response.mimetype, ("text/javascript", "application/javascript"))
+
     def test_logging_support_page_preserves_values_and_announces_validation(self):
         form = self.client.get("/progress/log/RT001")
         self.assert_layout(form, "/progress/", current="location")

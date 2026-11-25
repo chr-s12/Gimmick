@@ -384,3 +384,26 @@
     .gymmick-progress .period-controls > div { flex: 1 1 8.5rem; }
     .gymmick-progress .period-controls > .period-select { flex-basis: 100%; }
 }
+
+.gymmick-progress .chart-save-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .35rem .65rem;
+    max-width: 100%;
+}
+.gymmick-progress .chart-save-actions [hidden] { display: none; }
+.gymmick-progress .chart-save-actions [aria-disabled="true"] { opacity: .72; cursor: wait; }
+.gymmick-progress .chart-download-alternative {
+    border: 0;
+    background: transparent;
+    color: var(--blue-dark);
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+    cursor: pointer;
+    padding: .45rem .25rem;
+}
+.gymmick-progress .chart-download-status:empty { margin: 0; }

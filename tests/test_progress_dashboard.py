@@ -90,6 +90,8 @@ class ProgressDashboardTests(unittest.TestCase):
         self.assertIn(b'href="/progress/">Log Workout</a>', response.data)
         self.assertNotIn(b"<table", response.data)
         self.assertNotIn(b"<svg", response.data)
+        self.assertNotIn(b'id="download-weekly-chart"', response.data)
+        self.assertNotIn(b"weekly_chart_download.js", response.data)
         self.assertNotIn(b'id="record-exercise"', response.data)
         self.assertNotIn(b"Other exercise", response.data)
         self.assertNotIn(b"77.0 kg", response.data)
@@ -575,6 +577,7 @@ class ProgressDashboardTests(unittest.TestCase):
                                        student_id="ST002", **query)
             self.assertEqual("No workouts were recorded in the selected period." in html, expect_empty)
             self.assertNotIn('class="exercise-chart"', html)
+            self.assertNotIn('id="download-exercise-chart"', html)
             self.assertIn('<option value="E1" selected>Press</option>', html)
             self.assertIn("<h3>Press</h3>", html)
             self.assertIn("No performances for this exercise were recorded in the selected period.", html)
@@ -583,6 +586,9 @@ class ProgressDashboardTests(unittest.TestCase):
             self.assert_achievement(html, "heaviest-weight", "50.25", "kg", "2026-11-09")
             if expect_gap_week:
                 self.assertEqual(self.column_values(self.chart(html), "weekly-value"), ["0"])
+                self.assertIn('id="download-weekly-chart"', html)
+            if start == "2026-11-01":
+                self.assertNotIn('id="download-weekly-chart"', html)
         self.assertEqual(self.exercise_points(first), ["2026-11-09 · 251.25 kg"])
         self.assertEqual(self.storage_path.read_bytes(), before)
 
@@ -608,3 +614,80 @@ class ProgressDashboardTests(unittest.TestCase):
                 self.assertEqual(self.submit_workout("2026-11-25T09:00:00-05:00", "99").status_code, 500)
         self.assertEqual(self.dashboard_html(period="last7"), included)
         self.assertEqual(self.storage_path.read_bytes(), before)
+
+    def test_weekly_download_uses_rendered_period_bounds_and_target(self):
+        self.save_workout(
+            "W1", "2026-11-01T08:00:00-05:00", LoggedExercise("E1", "Press", 1, 5, 42.5),
+        )
+        relative = self.dashboard_html(period="last7")
+        self.assertEqual(relative.count('id="download-weekly-chart"'), 1)
+        self.assertEqual(self.chart(relative).get("id"), "weekly-consistency-chart")
+        for attribute in (
+            'aria-controls="weekly-consistency-chart"',
+            'data-period="Last 7 days"', 'data-start-date="2026-11-19"', 'data-end-date="2026-11-25"',
+            'data-first-week="2026-11-16"', 'data-last-week-end="2026-11-29"',
+            'data-current-week="true"', 'data-partial-week="true"',
+        ):
+            self.assertIn(attribute, relative)
+        self.assertIn('src="/progress/static/js/weekly_chart_download.js"', relative)
+
+        custom = self.dashboard_html(period="custom", end_date="2026-11-01")
+        self.assertIn('data-period="Custom date range"', custom)
+        self.assertIn('data-start-date=""', custom)
+        self.assertIn('data-end-date="2026-11-01"', custom)
+        self.assertNotIn("data-current-week", custom)
+        self.assertNotIn("data-partial-week", custom)
+
+    def test_exercise_download_targets_displayed_metric_and_escaped_student_scoped_metadata(self):
+        label = 'Press <& "'
+        self.save_workout(
+            "W1", "2026-11-24T08:00:00-05:00",
+            LoggedExercise("E1", label, 1, 5, 42.5), LoggedExercise("E2", label, 2, 10, 0.0),
+        )
+        self.save_workout("OTHER", "2026-11-24T08:00:00-05:00",
+                          LoggedExercise("E3", "Private exercise", 3, 6, 90.0), student_id="ST002")
+        before = self.storage_path.read_bytes()
+        for key, metric, label_text, unit, point in (
+            ("weight", "Weight", "Highest external weight", "kg", "0.0 kg"),
+            ("reps", "Repetitions", "Most repetitions per set", "reps", "10 reps"),
+            ("volume", "Volume", "Combined daily volume", "kg", "0.0 kg"),
+        ):
+            html = self.dashboard_html(period="last7", exercise="E2", metric=key,
+                                       record_exercise="E1", student_id="ST002")
+            self.assertEqual(self.chart(html, "exercise-chart").get("id"), "exercise-progression-chart")
+            button = re.search(r'<button[^>]*id="download-exercise-chart"[^>]*>', html).group()
+            for attribute in (
+                'aria-controls="exercise-progression-chart"', 'data-exercise="Press &lt;&amp; &#34; (E2)"',
+                'data-exercise-key="E2"', f'data-metric="{metric}"', f'data-measurement="{label_text}"',
+                f'data-unit="{unit}"', 'data-start-date="2026-11-19"', 'data-end-date="2026-11-25"',
+                'data-first-date="2026-11-24"', 'data-last-date="2026-11-24"',
+            ):
+                self.assertIn(attribute, button)
+            self.assertEqual(self.exercise_points(html), [f"2026-11-24 · {point}"])
+            self.assertIn('id="download-weekly-chart"', html)
+            self.assertIn('<option value="E1" selected>', self.records_section(html))
+            self.assertNotIn("Private exercise", html)
+        self.assertEqual(self.storage_path.read_bytes(), before)
+
+    def test_exercise_download_keeps_open_ended_period_and_omits_error_controls(self):
+        self.save_workout("W1", "2026-11-24T08:00:00-05:00", LoggedExercise("E1", "Press", 1, 5, 42.5))
+        html = self.dashboard_html(period="custom", start_date="2026-11-24")
+        self.assertIn('src="/progress/static/js/exercise_chart_download.js"', html)
+        button = re.search(r'<button[^>]*id="download-exercise-chart"[^>]*>', html).group()
+        self.assertIn('data-start-date="2026-11-24"', button)
+        self.assertIn('data-end-date=""', button)
+        invalid = self.client.get("/progress/analytics?period=invalid")
+        self.assertEqual(invalid.status_code, 400)
+        self.assertNotIn(b"download-exercise-chart", invalid.data)
+
+    def test_chart_save_actions_have_independent_accessible_status_and_fallback(self):
+        self.save_workout("W1", "2026-11-24T08:00:00-05:00", LoggedExercise("E1", "Press", 1, 5, 0.0))
+        html = self.dashboard_html(period="last7")
+        for chart, target in (("weekly", "weekly-consistency-chart"), ("exercise", "exercise-progression-chart")):
+            status = f"{chart}-download-status"
+            self.assertIn(f'id="{status}" class="chart-download-status" role="status"', html)
+            for suffix in ("", "-alternative"):
+                button = re.search(rf'<button[^>]*id="download-{chart}-chart{suffix}"[^>]*>', html).group()
+                self.assertIn(" hidden", button)
+                self.assertIn(f'aria-controls="{target}"', button)
+                self.assertIn(f'aria-describedby="{status}"', button)

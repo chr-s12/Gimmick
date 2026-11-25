@@ -1,4 +1,4 @@
-<svg class="weekly-chart" xmlns="http://www.w3.org/2000/svg"
+<svg class="weekly-chart" id="weekly-consistency-chart" xmlns="http://www.w3.org/2000/svg"
      width="{{ weekly_chart.width }}" height="{{ weekly_chart.height }}"
      viewBox="0 0 {{ weekly_chart.width }} {{ weekly_chart.height }}"
      role="img" aria-labelledby="weekly-chart-title weekly-chart-description">
