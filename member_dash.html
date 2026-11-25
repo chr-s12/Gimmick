@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="memberdash.css">
+	<title>Gimmick | Member Dashboard</title>
+</head>
+<body>
+	<div class="app">
+		<aside class="sidebar" aria-label="Main navigation">
+			<div class="brand"><span class="brand-mark">G</span> gimmick</div>
+			<p class="nav-label">Workspace</p>
+			<nav class="nav">
+				<button class="active" type="button" data-page="overview" aria-current="page"><span class="nav-icon">▦</span> Overview</button>
+				<button type="button" data-page="details"><span class="nav-icon">⌁</span> Session details</button>
+			</nav>
+			<div class="sidebar-bottom"><div class="profile"><span class="avatar">JD</span><span>Jordan Davis</span></div><div class="sidebar-role">Member</div></div>
+		</aside>
+
+		<main>
+			<div class="topline">
+				<div><p class="eyebrow">Your training</p><h1>Performance dashboard</h1></div>
+				<div class="date-pill" id="date-range">Last 4 weeks</div>
+			</div>
+
+			<section class="page active" id="overview" aria-labelledby="overview-title">
+				<div class="welcome">
+					<div><h2 id="overview-title">Overview</h2><p>A snapshot of your progress across recent sessions.</p></div>
+				</div>
+				<div class="grid metrics">
+					<article class="card metric"><div class="metric-top">Average session time <span class="metric-icon">◷</span></div><div class="metric-value">52 <span class="metric-unit">min</span></div><div class="metric-note"><span class="positive">↑ 8%</span> compared with the previous 4 weeks</div></article>
+					<article class="card metric"><div class="metric-top">Total reps completed <span class="metric-icon">↗</span></div><div class="metric-value">1,248</div><div class="metric-note"><span class="positive">↑ 12%</span> across your logged exercises</div></article>
+					<article class="card metric"><div class="metric-top">Training volume <span class="metric-icon">◆</span></div><div class="metric-value">18,460 <span class="metric-unit">kg</span></div><div class="metric-note"><span class="positive">↑ 9%</span> total weight lifted</div></article>
+				</div>
+
+				<div class="grid overview-grid">
+					<section class="card panel">
+						<div class="panel-heading"><div><h2>Performance over time</h2><p class="panel-subtitle">Weekly progress across all exercises</p></div><select class="select" id="overview-metric" aria-label="Choose overview metric"><option value="volume">Training volume</option><option value="reps">Total reps</option></select></div>
+						<div class="chart-wrap"><svg viewBox="0 0 600 220" role="img" aria-label="Line graph showing weekly performance improvement" preserveAspectRatio="none">
+							<defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#FF0000" stop-opacity=".2"/><stop offset="100%" stop-color="#FF0000" stop-opacity="0"/></linearGradient></defs>
+							<line class="chart-grid" x1="42" y1="25" x2="590" y2="25"/><line class="chart-grid" x1="42" y1="75" x2="590" y2="75"/><line class="chart-grid" x1="42" y1="125" x2="590" y2="125"/><line class="chart-grid" x1="42" y1="175" x2="590" y2="175"/>
+							<text class="chart-label" x="2" y="29">5k</text><text class="chart-label" x="2" y="79">4k</text><text class="chart-label" x="2" y="129">3k</text><text class="chart-label" x="2" y="179">2k</text>
+							<path class="chart-fill" id="chart-fill" d="M50 155 L155 134 L260 119 L365 92 L470 77 L575 46 L575 180 L50 180 Z"/><path class="chart-line" id="chart-line" d="M50 155 L155 134 L260 119 L365 92 L470 77 L575 46"/>
+							<g id="chart-dots"><circle class="chart-dot" cx="50" cy="155" r="4"/><circle class="chart-dot" cx="155" cy="134" r="4"/><circle class="chart-dot" cx="260" cy="119" r="4"/><circle class="chart-dot" cx="365" cy="92" r="4"/><circle class="chart-dot" cx="470" cy="77" r="4"/><circle class="chart-dot" cx="575" cy="46" r="4"/></g>
+							<text class="chart-label" x="42" y="205">Week 1</text><text class="chart-label" x="147" y="205">Week 2</text><text class="chart-label" x="252" y="205">Week 3</text><text class="chart-label" x="357" y="205">Week 4</text><text class="chart-label" x="462" y="205">Week 5</text><text class="chart-label" x="555" y="205">Week 6</text>
+						</svg></div>
+						<div class="chart-legend"><span><i class="legend-mark"></i><span id="legend-label">Training volume (kg)</span></span></div>
+					</section>
+					<section class="card panel">
+						<div class="panel-heading"><div><h2>What’s improving</h2><p class="panel-subtitle">Highlights from your recent data</p></div></div>
+						<div class="insights">
+							<div class="insight"><span class="insight-bullet">↑</span><div><strong>More reps per session</strong><span>Your average reps are up 12% over the previous 4 weeks.</span></div></div>
+							<div class="insight"><span class="insight-bullet">↗</span><div><strong>Building strength</strong><span>Combined training volume increased by 9%.</span></div></div>
+							<div class="insight"><span class="insight-bullet">✓</span><div><strong>Consistent routine</strong><span>You completed 4 sessions this week.</span></div></div>
+						</div>
+					</section>
+				</div>
+
+				<div class="section-title"><div><h2>Exercise highlights</h2><p>Recent results from your routine</p></div><button class="select" type="button" data-go-details>View all details →</button></div>
+				<div class="grid exercise-grid" id="exercise-highlights"></div>
+			</section>
+
+			<section class="page" id="details" aria-labelledby="details-title">
+				<div class="welcome">
+					<div><h2 id="details-title">Session details</h2><p>Explore your progress exercise by exercise.</p></div>
+					<div class="detail-controls"><label class="filter-label" for="exercise-filter">Exercise</label><select class="select" id="exercise-filter" aria-label="Filter by exercise"></select></div>
+				</div>
+				<div class="grid detail-kpis" id="detail-kpis"></div>
+				<div class="grid detail-layout">
+					<section class="card panel">
+						<div class="panel-heading"><div><h2 id="detail-chart-title">Progress over time</h2><p class="panel-subtitle">Recent session results for this exercise</p></div><select class="select" id="detail-metric" aria-label="Choose exercise metric"><option value="weight">Weight lifted</option><option value="reps">Reps completed</option></select></div>
+						<div class="chart-wrap"><svg viewBox="0 0 600 220" role="img" aria-label="Line graph of exercise results over recent sessions" preserveAspectRatio="none">
+							<defs><linearGradient id="detailFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#FF0000" stop-opacity=".2"/><stop offset="100%" stop-color="#FF0000" stop-opacity="0"/></linearGradient></defs>
+							<line class="chart-grid" x1="42" y1="25" x2="590" y2="25"/><line class="chart-grid" x1="42" y1="75" x2="590" y2="75"/><line class="chart-grid" x1="42" y1="125" x2="590" y2="125"/><line class="chart-grid" x1="42" y1="175" x2="590" y2="175"/>
+							<text class="chart-label" x="42" y="205">Session 1</text><text class="chart-label" x="147" y="205">Session 2</text><text class="chart-label" x="252" y="205">Session 3</text><text class="chart-label" x="357" y="205">Session 4</text><text class="chart-label" x="462" y="205">Session 5</text><text class="chart-label" x="555" y="205">Session 6</text>
+							<path class="chart-fill" id="detail-fill" d="M50 155 L155 134 L260 119 L365 92 L470 77 L575 46 L575 180 L50 180 Z"/><path class="chart-line" id="detail-line" d="M50 155 L155 134 L260 119 L365 92 L470 77 L575 46"/><g id="detail-dots"><circle class="chart-dot" cx="50" cy="155" r="4"/><circle class="chart-dot" cx="155" cy="134" r="4"/><circle class="chart-dot" cx="260" cy="119" r="4"/><circle class="chart-dot" cx="365" cy="92" r="4"/><circle class="chart-dot" cx="470" cy="77" r="4"/><circle class="chart-dot" cx="575" cy="46" r="4"/></g>
+						</svg></div>
+						<div class="chart-legend"><span><i class="legend-mark"></i><span id="detail-legend">Weight lifted (kg)</span></span></div>
+					</section>
+					<section class="card panel">
+						<div class="panel-heading"><div><h2>Routine breakdown</h2><p class="panel-subtitle">Exercises in your recent sessions</p></div></div>
+						<div class="routine-list" id="routine-list"></div>
+					</section>
+				</div>
+				<section class="card panel recent-sessions">
+					<div class="panel-heading"><div><h2>Recent sessions</h2><p class="panel-subtitle" id="history-subtitle">Set-by-set results for the selected exercise</p></div></div>
+					<div class="history-list" id="history-list"></div>
+				</section>
+			</section>
+		</main>
+	</div>
+	<script>
+		// Example workout data; replace with member session records when available.
+		const exercises = [
+			{ name: 'Barbell squat', type: 'Lower body · Compound', sets: 4, reps: 8, weight: 80, trend: [65, 67.5, 70, 72.5, 77.5, 80], repTrend: [6, 6, 7, 7, 8, 8] },
+			{ name: 'Bench press', type: 'Upper body · Compound', sets: 4, reps: 8, weight: 60, trend: [50, 52.5, 55, 55, 57.5, 60], repTrend: [6, 7, 7, 8, 8, 8] },
+			{ name: 'Lat pulldown', type: 'Upper body · Machine', sets: 3, reps: 12, weight: 45, trend: [35, 37.5, 40, 40, 42.5, 45], repTrend: [10, 10, 11, 11, 12, 12] },
+			{ name: 'Romanian deadlift', type: 'Lower body · Compound', sets: 3, reps: 10, weight: 70, trend: [55, 57.5, 60, 62.5, 67.5, 70], repTrend: [8, 8, 9, 9, 10, 10] },
+			{ name: 'Dumbbell shoulder press', type: 'Upper body · Free weights', sets: 3, reps: 10, weight: 20, trend: [15, 15, 17.5, 17.5, 20, 20], repTrend: [8, 8, 9, 9, 10, 10] },
+			{ name: 'Leg press', type: 'Lower body · Machine', sets: 4, reps: 10, weight: 140, trend: [110, 115, 120, 125, 135, 140], repTrend: [8, 8, 9, 9, 10, 10] }
+		];
+		const sessionDates = ['May 6', 'May 10', 'May 13', 'May 17', 'May 20', 'May 24'];
+		const byId = id => document.getElementById(id);
+		const highlights = byId('exercise-highlights');
+		highlights.innerHTML = exercises.slice(0, 3).map((exercise, index) => `
+			<article class="card exercise-card" tabindex="0" role="button" data-exercise="${index}" aria-label="View ${exercise.name} details">
+				<div class="exercise-name">${exercise.name}</div><div class="exercise-type">${exercise.type}</div>
+				<div class="exercise-stats"><div><strong>${exercise.weight} kg</strong>Working weight</div><div><strong>${exercise.sets} × ${exercise.reps}</strong>Sets × reps</div><div><strong class="positive">+${Math.round((exercise.weight / exercise.trend[0] - 1) * 100)}%</strong>4-week change</div></div>
+			</article>`).join('');
+
+		const filter = byId('exercise-filter');
+		filter.innerHTML = exercises.map((exercise, index) => `<option value="${index}">${exercise.name}</option>`).join('');
+
+		function drawLine(lineId, fillId, dotsId, values) {
+			const points = values.map((value, index) => ({ x: 50 + index * 105, y: 175 - ((value - Math.min(...values)) / (Math.max(...values) - Math.min(...values) || 1)) * 120 }));
+			const path = points.map(point => `${point.x},${point.y}`).join(' L');
+			document.getElementById(lineId).setAttribute('d', `M${path}`);
+			document.getElementById(fillId).setAttribute('d', `M${path} L575 180 L50 180 Z`);
+			document.getElementById(dotsId).innerHTML = points.map(point => `<circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="4"/>`).join('');
+		}
+		function updateDetails() {
+			const exercise = exercises[Number(filter.value)];
+			const metric = byId('detail-metric').value;
+			const values = metric === 'weight' ? exercise.trend : exercise.repTrend;
+			const unit = metric === 'weight' ? 'kg' : 'reps';
+			byId('detail-chart-title').textContent = `${metric === 'weight' ? 'Weight' : 'Reps'} progress`;
+			byId('detail-legend').textContent = `${metric === 'weight' ? 'Weight lifted (kg)' : 'Reps per set'}`;
+			drawLine('detail-line', 'detail-fill', 'detail-dots', values);
+			byId('detail-kpis').innerHTML = `
+				<article class="card small-kpi"><span>Current working weight</span><strong>${exercise.weight} kg</strong></article>
+				<article class="card small-kpi"><span>Typical session volume</span><strong>${(exercise.sets * exercise.reps * exercise.weight).toLocaleString()} kg</strong></article>
+				<article class="card small-kpi"><span>Change since first session</span><strong class="positive">+${Math.round((exercise.weight / exercise.trend[0] - 1) * 100)}%</strong></article>`;
+			byId('routine-list').innerHTML = exercises.map((item, index) => `<div class="routine-item"><strong>${item.name}</strong><span>${item.sets} sets · ${item.reps} reps</span></div>`).join('');
+			byId('history-subtitle').textContent = `Set-by-set results for ${exercise.name}`;
+			byId('history-list').innerHTML = sessionDates.map((date, index) => `<div class="history-row"><strong>${date}</strong><span>${exercise.sets} sets × ${exercise.repTrend[index]} reps</span><strong>${exercise.trend[index]} kg</strong></div>`).join('');
+		}
+		function showPage(page) {
+			document.querySelectorAll('.page').forEach(section => section.classList.toggle('active', section.id === page));
+			document.querySelectorAll('.nav button').forEach(button => {
+				const selected = button.dataset.page === page;
+				button.classList.toggle('active', selected);
+				if (selected) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+			});
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+		document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click', () => showPage(button.dataset.page)));
+		document.querySelectorAll('[data-go-details]').forEach(button => button.addEventListener('click', () => showPage('details')));
+		highlights.addEventListener('click', event => {
+			const card = event.target.closest('[data-exercise]');
+			if (!card) return;
+			filter.value = card.dataset.exercise;
+			updateDetails();
+			showPage('details');
+		});
+		highlights.addEventListener('keydown', event => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				const card = event.target.closest('[data-exercise]');
+				if (card) { event.preventDefault(); card.click(); }
+			}
+		});
+		filter.addEventListener('change', updateDetails);
+		byId('detail-metric').addEventListener('change', updateDetails);
+		byId('overview-metric').addEventListener('change', event => {
+			const reps = event.target.value === 'reps';
+			byId('legend-label').textContent = reps ? 'Total reps' : 'Training volume (kg)';
+			const vals = reps ? [135, 128, 112, 95, 78, 55] : [155, 134, 119, 92, 77, 46];
+			const points = vals.map((y, index) => `${50 + index * 105},${y}`).join(' L');
+			byId('chart-line').setAttribute('d', `M${points}`);
+			byId('chart-fill').setAttribute('d', `M${points} L575 180 L50 180 Z`);
+			byId('chart-dots').innerHTML = vals.map((y, index) => `<circle class="chart-dot" cx="${50 + index * 105}" cy="${y}" r="4"/>`).join('');
+		});
+		updateDetails();
+	</script>
+</body>
+</html>
