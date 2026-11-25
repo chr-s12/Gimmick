@@ -5,9 +5,33 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from progress.models import LoggedExercise, WorkoutLog
+from progress.repository import WorkoutLogRepository
 
 
 class ProgressService:
+
+    def __init__(self, repository: WorkoutLogRepository | None = None):
+        self._repository = WorkoutLogRepository() if repository is None else repository
+
+    def log_workout(self, student_id, routine, form_data) -> WorkoutLog:
+        """Create and persist a completed workout."""
+        workout = self.create_workout(student_id, routine, form_data)
+        self._repository.save(workout)
+        return workout
+
+    def get_workout(self, student_id, workout_id) -> WorkoutLog | None:
+        """Look up a saved workout scoped to the student."""
+        return self._repository.get_by_id(student_id, workout_id)
+
+    def get_workout_history(self, student_id: str) -> list[WorkoutLog]:
+        """Return newest workouts first, retaining saved order for equal instants."""
+        # Stored timestamps have fixed offsets. Comparing them directly
+        # avoids overflow when an instant falls outside datetime's UTC range.
+        return sorted(
+            self._repository.get_by_student(student_id),
+            key=lambda workout: workout.completed_at,
+            reverse=True,
+        )
 
     @staticmethod
     def validate_positive_integer(value):

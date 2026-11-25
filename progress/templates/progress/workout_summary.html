@@ -12,11 +12,7 @@
     <h2>Completed Workout Summary</h2>
 
     <p style="color: green;">
-        Workout successfully validated.
-    </p>
-
-    <p>
-        This workout has not yet been saved permanently.
+        Workout saved successfully.
     </p>
 
     <h3>{{ workout.routine_name }}</h3>
@@ -25,8 +21,8 @@
     <p>Student ID: {{ workout.student_id }}</p>
 
     <p>
-        Completed at (UTC):
-        {{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}
+        Completed at:
+        {{ workout.completed_at.strftime('%Y-%m-%d %H:%M:%S %z') }}
     </p>
 
     <h3>Completed Exercises</h3>
@@ -52,6 +48,8 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <p><a href="{{ url_for('progress.workout_history') }}">Back to Workout History</a></p>
 
     <p>
         <a href="{{ url_for('progress.dashboard') }}">

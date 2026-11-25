@@ -28,6 +28,10 @@
     {% else %}
     <p>Enter your actual completed exercise details.</p>
 
+    {% if storage_error %}
+        <p class="error" role="alert">{{ storage_error }}</p>
+    {% endif %}
+
     {% if errors %}
         <p class="error" role="alert">
             Please correct the invalid fields below.

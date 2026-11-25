@@ -13,6 +13,8 @@
 
     <p>Welcome, {{ student.username }}</p>
 
+    <p><a href="{{ url_for('progress.workout_history') }}">Workout History</a></p>
+
     <h3>My Saved Routines</h3>
 
     {% for routine in routines %}
