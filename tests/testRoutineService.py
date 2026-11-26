@@ -79,11 +79,12 @@ def test_cannotTouchAnotherStudentsRoutine(service):
 
 
 # AC-01.1: templates
-def test_onlyTrainersPublishTemplatesAndStudentsAdoptACopy(service):
-    studentRoutine = service.create("620100001", "Mine", push(), isPublic=True)
-    assert studentRoutine["isPublic"] is False
+def test_studentsAndTrainersPublishTemplatesAndStudentsAdoptACopy(service):
+    studentRoutine = service.create("620100001", "Chest Day", push(), isPublic=True)   # TC-0.1.0
+    assert studentRoutine["isPublic"] is True
     template = service.create("700000001", "Beginner strength", push(), isPublic=True)
-    assert [t["name"] for t in service.listTemplates("620100002")] == ["Beginner strength"]
+    assert sorted(t["name"] for t in service.listTemplates("620100002")) == ["Beginner strength", "Chest Day"]
+    assert [t["name"] for t in service.listTemplates("620100001")] == ["Beginner strength"]   # not your own
     adopted = service.adopt("620100002", template["routineId"])
     assert adopted["routineId"] != template["routineId"] and adopted["isPublic"] is False
     service.edit("620100002", adopted["routineId"], "My strength", push())   # the copy can be changed

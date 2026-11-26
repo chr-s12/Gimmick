@@ -91,6 +91,23 @@ def test_eachRoleOnlyReachesItsOwnPages(site, uwiId, url):
     assert login(app, uwiId).get(url).status_code == 403
 
 
+@pytest.mark.parametrize("uwiId, method, url, message", [
+    (STUDENT, "post", f"/clients/{STUDENT2}/assign", "Only personal trainers can assign routines to students."),  # TC-0.1.3
+    (STUDENT, "get", "/clients/", "Only personal trainers can view clients."),                       # TC-0.6.7
+    (STAFF, "get", f"/clients/{STUDENT}", "Only personal trainers can view clients."),
+    (OPERATOR, "get", "/clients/", "Only personal trainers can view clients."),
+    (STUDENT, "get", "/reports/", "Only the gym operator can generate or export usage reports."),  # TC-07.13
+    (TRAINER, "get", "/reports/export.csv?start=2026-11-02&end=2026-11-08",
+     "Only the gym operator can generate or export usage reports."),
+    (STAFF, "get", "/reports/", "Only the gym operator can generate or export usage reports."),
+])
+def test_wrongRoleIsToldItIsOutsideTheirScope(site, uwiId, method, url, message):
+    app, _, _ = site
+    response = getattr(login(app, uwiId), method)(url)
+    html = response.get_data(as_text=True)
+    assert response.status_code == 403 and message in html and "outside what your account can do" in html
+
+
 def test_homeSendsEachRoleToItsMainPage(site):
     app, _, _ = site
     for uwiId, target in ((TRAINER, "/schedule/"), (STAFF, "/desk"), (OPERATOR, "/reports/")):

@@ -64,8 +64,8 @@ def change(bookingId):
     if request.method == "POST":
         try:
             svc("booking").editBooking(myId(), bookingId, request.form.get("slotId", ""))
-            flash("Your change request was sent to the trainer. Your current session stays booked until they "
-                  "accept the new time.", "success")
+            flash("Your session was moved to the new time and sent to the trainer for confirmation. "
+                  "It shows as Pending until they accept.", "success")
             return redirect(url_for("booking.sessions"))
         except BookingError as e:
             flash(str(e), "error")

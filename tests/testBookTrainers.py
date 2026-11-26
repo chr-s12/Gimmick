@@ -135,19 +135,21 @@ def test_trainerDeclineTellsTheStudent(world):
 
 
 # AC-05.2 / scenario 4
-def test_editSendsRebookingRequestAndKeepsOldSessionUntilAccepted(world):
+def test_editMovesTheSavedBookingFromAcceptedToPending(world):
+    """TC-05.4: Accepted -> Pending at the new time, trainer asked to confirm, student informed."""
     dataDir, _, service = world
     session = confirmed(service, "mon10")
     change = service.editBooking("S1", session.bookingId, "mon12")
-    assert change.status == BookingStatus.PENDING and change.replacesBookingId == session.bookingId
+    assert change.bookingId == session.bookingId
+    saved = BookingRepository(dataDir).get(session.bookingId)
+    assert saved.status == BookingStatus.PENDING and saved.slotId == "mon12"
+    assert len(BookingRepository(dataDir).listAll()) == 1
     assert "asked to move" in messages(dataDir, "T1")[0]
-    assert "request to move" in messages(dataDir, "S1")[0]
-    assert BookingRepository(dataDir).get(session.bookingId).status == BookingStatus.ACCEPTED
+    assert "sent to" in messages(dataDir, "S1")[0]
 
-    service.respondToRequest("T1", change.bookingId, accept=True)
+    service.respondToRequest("T1", session.bookingId, accept=True)
     schedule = service.getStudentSchedule("S1")
     assert [(row["label"], row["status"]) for row in schedule] == [("Mon 30 Nov, 12:00", "Accepted")]
-    assert BookingRepository(dataDir).get(session.bookingId).status == BookingStatus.CANCELLED
 
 
 def test_editToUnavailableTimeIsRefused(world):

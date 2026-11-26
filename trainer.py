@@ -1,5 +1,21 @@
 from ActiveUser import ActiveUser
-from datetime import datetime
+from datetime import datetime, timedelta
+
+
+def _clientName(booking):
+    """The booked student's username (Student objects keep it in getUsername())."""
+    student = getattr(booking, 'student', None)
+    if student is None:
+        return None
+    return student.getUsername() if hasattr(student, 'getUsername') else getattr(student, 'username', None)
+
+
+def _bookingTime(booking):
+    """Booking/booking.py keeps the time behind getBookingDateTime()."""
+    if hasattr(booking, 'getBookingDateTime'):
+        return booking.getBookingDateTime()
+    return getattr(booking, 'bookingDateTime', None)
+
 
 class Trainer(ActiveUser):
     def __init__(self, username: str, idNum: int):
@@ -52,15 +68,15 @@ class Trainer(ActiveUser):
         if booking is None:
             return False
 
-        booking.setStatus("Accepted") 
+        booking.setStatus("Accepted")
 
-        student = getattr(booking, 'student', None)
-        booking_time = getattr(booking, 'bookingDateTime', None)
+        username = _clientName(booking)
+        booking_time = _bookingTime(booking)
 
-        if student is not None and booking_time is not None:
-            if student.username not in self.__clientList:
-                self.__clientList[student.username] = []
-            self.__clientList[student.username].append(booking_time)
+        if username is not None and booking_time is not None:
+            if username not in self.__clientList:
+                self.__clientList[username] = []
+            self.__clientList[username].append(booking_time)
         return True
 
     def rejectBooking(self, booking) -> bool:
@@ -76,11 +92,10 @@ class Trainer(ActiveUser):
             return False
         booking.setStatus("Cancelled")
 
-        student = getattr(booking, 'student', None)
-        booking_time = getattr(booking, 'bookingDateTime', None)
+        username = _clientName(booking)
+        booking_time = _bookingTime(booking)
 
-        if student is not None and booking_time is not None:
-            username = student.username 
+        if username is not None and booking_time is not None:
             if username in self.__clientList:
                 if booking_time in self.__clientList[username]:
                     self.__clientList[username].remove(booking_time)
@@ -94,11 +109,10 @@ class Trainer(ActiveUser):
         if booking is None:
             return False
 
-        student = getattr(booking, 'student', None)
-        old_time = getattr(booking, 'bookingDateTime', None)
+        username = _clientName(booking)
+        old_time = _bookingTime(booking)
 
-        if student is not None and old_time is not None:
-            username = student.username
+        if username is not None and old_time is not None:
             if username in self.__clientList and old_time in self.__clientList[username]:
                 self.__clientList[username].remove(old_time)
                 
@@ -116,7 +130,7 @@ class Trainer(ActiveUser):
             return False
 
         # Ensure the student is in this trainer's client list
-        if not any(str(client.getIdNum()) == str(stu.getIdNum()) for client in self._client_list):
+        if stu.getUsername() not in self.__clientList:
             return False
 
         # Prevent assigning a duplicate routine the student already has
@@ -124,4 +138,13 @@ class Trainer(ActiveUser):
             return False
 
         return stu.adoptRoutine(routine)
+
+    def get_upcoming_reminders(self, current_time: datetime) -> list:
+        """Scenario 2.11 / AC-02.5: confirmed sessions starting within the next hour."""
+        reminders = []
+        for username, times in self.__clientList.items():
+            for session_time in times:
+                if current_time < session_time <= current_time + timedelta(hours=1):
+                    reminders.append({"student": username, "session_time": session_time})
+        return sorted(reminders, key=lambda r: r["session_time"])
 

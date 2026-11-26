@@ -14,7 +14,8 @@ import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+from flask import Flask, flash, g, redirect, render_template, request, session, url_for
+from werkzeug.exceptions import Forbidden
 
 from accounts import ROLE_LABELS, buildAccountService
 from bookTrainers import buildBookingService
@@ -22,6 +23,7 @@ from controllers.auth import auth
 from controllers.availability import availability
 from controllers.booking import booking
 from controllers.clients import clients
+from controllers.common import deny
 from controllers.home import home
 from controllers.occupancy import occupancy
 from controllers.reports import reports
@@ -168,7 +170,7 @@ def create_app(config=None):
             session["lastSeen"] = now
         allowed = BLUEPRINT_ROLES.get(request.blueprint)
         if allowed and user["role"] not in allowed:
-            abort(403)
+            deny()
         try:   # session reminders are due an hour before (AC-02.5, AC-05.4)
             app.extensions["gymmick"]["booking"].sendDueReminders()
             app.extensions["gymmick"]["availability"].sendDueReminders()
@@ -194,9 +196,10 @@ def create_app(config=None):
         return value.strftime("%a %d %b %Y, %H:%M")
 
     @app.errorhandler(403)
-    def forbidden(_):
-        return render_template("error.html", title="Not allowed",
-                               message="Your account doesn't have access to this page."), 403
+    def forbidden(error):
+        message = error.description if error.description != Forbidden.description else \
+            "Your account doesn't have access to this page."
+        return render_template("error.html", title="Not allowed", message=message), 403
 
     @app.errorhandler(404)
     def notFound(_):

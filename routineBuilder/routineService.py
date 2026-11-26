@@ -104,8 +104,10 @@ class RoutineService:
             raise RoutineError("The routine name must be 60 characters or fewer.")
         return name
 
-    def _public(self, uwiId: str, isPublic: bool) -> bool:
-        return bool(isPublic) and self._account(uwiId)["role"] == "trainer"
+    @staticmethod
+    def _public(uwiId: str, isPublic: bool) -> bool:
+        """Any student or trainer can publish a routine as a template (test plan TC-0.1.0, TC-0.1.10)."""
+        return bool(isPublic)
 
     # ---- AC-01.0 / AC-01.2: create, edit, delete ---------------------------------------------------
 

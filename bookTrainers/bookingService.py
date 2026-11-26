@@ -133,30 +133,30 @@ class BookingService:
                                           f"for confirmation.", now)
         return booking
 
-    # ---- AC-05.2 / scenario 4: move a confirmed session ----------------------------------------
+    # ---- AC-05.2 / scenario 4 (TC-05.4): move a confirmed session ------------------------------
 
     def editBooking(self, studentId: str, bookingId: str, newSlotId: str) -> Booking:
+        """The saved booking moves to the new time and goes from Accepted back to Pending,
+        so the trainer confirms the new time like any other request."""
         student = self._student(studentId)
         now = self.clock()
         current = self._ownBooking(studentId, bookingId)
         if current.status != BookingStatus.ACCEPTED or current.start <= now:
             raise BookingError("Only a confirmed session that hasn't started yet can be changed.")
-        allBookings = self.bookings.listAll()
-        if any(b.replacesBookingId == bookingId and b.status == BookingStatus.PENDING for b in allBookings):
-            raise BookingError("A change to this session is already waiting for the trainer.")
-        slot = self._checkSlotForStudent(studentId, newSlotId, now, allBookings, ignoreId=bookingId)
+        slot = self._checkSlotForStudent(studentId, newSlotId, now, self.bookings.listAll(), ignoreId=bookingId)
         if slot.trainerId != current.trainerId:
             raise BookingError("Pick another time with the same trainer, or cancel and book someone else.")
         trainer = self._trainer(current.trainerId)
-        request = Booking(studentId, slot.trainerId, slot.start, slot.end, slotId=slot.slotId,
-                          replacesBookingId=bookingId)
-        self.bookings.add(request)
         old, new = describeTime(current.start), describeTime(slot.start)
+        current.start, current.end, current.slotId = slot.start, slot.end, slot.slotId
+        current.status = BookingStatus.PENDING
+        current.studentReminded = current.trainerReminded = False
+        self.bookings.save(current)
         self.notifications.add(trainer["uwiId"], f"{student['name']} asked to move their session on {old} "
                                                  f"to {new}.", now)
-        self.notifications.add(studentId, f"Your request to move your {old} session to {new} was sent to "
+        self.notifications.add(studentId, f"Your session on {old} was changed to {new} and sent to "
                                           f"{trainer['name']} for confirmation.", now)
-        return request
+        return current
 
     # ---- AC-05.3 / scenario 5: cancel ------------------------------------------------------------
 
