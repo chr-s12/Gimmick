@@ -75,6 +75,9 @@ class OccupancyService:
             } for i, e in enumerate(s.queue.entries, start=1)]
             view["askedToLeave"] = [{"uwiId": u, "minutesInside": int((s.now - s.inside[u]).total_seconds() // 60)}
                                     for u in _askedToLeave(s)]
+            view["inside"] = [{"uwiId": u, "since": t.strftime("%H:%M"),
+                               "minutesInside": int((s.now - t).total_seconds() // 60)}
+                              for u, t in sorted(s.inside.items(), key=lambda item: item[1])]
             return view
 
     def getNotifications(self, uwiId: str) -> List[dict]:

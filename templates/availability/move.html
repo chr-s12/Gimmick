@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Move session{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Move a session</h1><p>{{ session.studentName }}, currently {{ session.label }}-{{ session.endLabel }}.</p></div></div>
+{% if options %}
+<form class="card" method="post">
+	<fieldset style="border:0;padding:0;margin:0 0 14px">
+		<legend style="font-weight:600;margin-bottom:6px">Move to one of your free times</legend>
+		{% for o in options %}
+			<label class="check"><input type="radio" name="slotId" value="{{ o.slotId }}" {% if loop.first %}checked{% endif %}> {{ o.label }}</label>
+		{% endfor %}
+	</fieldset>
+	<p class="small muted">{{ session.studentName }} will be notified of the new time.</p>
+	<div class="actions">
+		<button class="btn" type="submit">Move session</button>
+		<a class="btn secondary" href="{{ url_for('availability.schedule') }}">Cancel</a>
+	</div>
+</form>
+{% else %}
+<div class="empty">You have no other free times. <a href="{{ url_for('availability.schedule') }}">Add a time</a> first, then move the session.</div>
+{% endif %}
+{% endblock %}

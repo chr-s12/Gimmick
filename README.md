@@ -1,6 +1,59 @@
 # Gimmick
 Created to create an app according to the UWI Computing course COMP2140 requirements
 
+## Run the Gymmick app
+
+The whole prototype (all seven features, login and roles) runs as one local Flask app (SRS 1.4.1).
+
+```sh
+python -m pip install -r requirements.txt
+python seedData.py --reset      # demo accounts, six weeks of attendance, trainer times, templates
+python app.py                   # then open http://127.0.0.1:5000
+```
+
+Demo logins (password `gymmick123` for all of them):
+
+| Role | UWI ID | Lands on |
+|---|---|---|
+| Student | `620200001` (Alex Brown) | Home: routines, sessions, occupancy |
+| Personal trainer | `700000001` (Devon Clarke) | My schedule |
+| Gym staff | `100000001` | Front desk |
+| Gym operator | `100000002` | Usage reports |
+
+New students and trainers can also register on the sign-up page.
+
+Check-ins are only accepted during gym opening hours (SRS 1.6.8). To try the front desk outside those hours,
+start the app with the environment variable `GYMMICK_IGNORE_HOURS=1`.
+
+### Where each feature lives
+
+Each feature follows the SDS layers: a Blueprint in `controllers/` checks the login and role, calls one
+service, and the service reads and writes JSON files in `data/` through its repositories.
+
+| Feature | Pages (`controllers/`) | Service |
+|---|---|---|
+| Login, roles, password resets (SRS 3.2.2) | `auth.py`, `home.py` | `accounts/` |
+| 1 Build Routines | `routines.py` | `routineBuilder/` (uses `Routine`, `Exercise`, `Student`) |
+| 2 Manage Availability | `availability.py` | `manageAvailability/` |
+| 3 Occupancy Monitoring | `occupancy.py` | `occupancyTrends/occupancyService.py` |
+| 4 Track Progress | `progress/routes.py` | `progress/` |
+| 5 Book Trainers | `booking.py` | `bookTrainers/` |
+| 6 View Clientele | `clients.py` | `viewClientele/` |
+| 7 Analyze Usage Trends | `reports.py` | `occupancyTrends/reportService.py` |
+
+`app.py` builds the services and Blueprints, and on every request checks the login, the 15-minute
+inactivity timeout and the user's role, and sends session reminders that are due. Failed logins and
+server errors are written to `logs/gymmick.log` (SRS 4.3). The operator can download a backup of
+`data/` (SRS 4.1).
+
+### Tests
+
+```sh
+python -m pytest
+```
+
+`tests/testWebApp.py` drives the real pages end to end; the other test files cover each service.
+
 ## Run the standalone Feature 4 app
 
 From this checkout, use Python 3.12 and the project virtual environment.
@@ -21,12 +74,13 @@ lists saved workouts newest first. [My Progress](http://127.0.0.1:5000/progress/
 shows Weekly Consistency, Individual Exercise Progression, and All-time
 Personal Records from the student's saved workouts.
 
-This standalone prototype always uses fictional student ST001. The
-students and saved routines come from the JSON files in `fixtures/`
-through `progress/mock_dependencies.py`. Group integration still needs
-authenticated student identity and the team's routine provider.
+In the full app, Track Progress uses the logged-in student and their saved
+and trainer-added routines (`app.ProgressAccounts`). Passing
+`PROGRESS_FIXTURES=True` to the app factory (as the Feature 4 tests do)
+runs it on fictional student ST001 instead, with the students and routines
+from the JSON files in `fixtures/` through `progress/mock_dependencies.py`.
 
-Saved workouts go in the Git-ignored project file `data/workouts.json`.
+Saved workouts go in the Git-ignored project file `data/workoutLogs.json`, where View Clientele also reads them.
 Tests use an isolated file by passing `WORKOUT_STORAGE_PATH` to the app factory.
 
 ```sh

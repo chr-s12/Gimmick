@@ -13,11 +13,34 @@ import shutil
 from collections import deque
 from datetime import date, datetime, timedelta
 
+from werkzeug.security import generate_password_hash
+
+from bookTrainers import buildBookingService
+from bookTrainers.models import TimeSlot
+from bookTrainers.repositories import TimeSlotRepository
 from occupancyTrends.gymHours import OPENING_HOURS
 from occupancyTrends.models import Direction, EntryExitEvent, EntryStatus, Queue, QueueEntry
 from occupancyTrends.repositories import EntryExitRepository, QueueRepository, UserRepository
+from routineBuilder import buildRoutineService, parseExercises
 
 STAFF_ID = "100000001"
+OPERATOR_ID = "100000002"
+DEMO_PASSWORD = "gymmick123"
+DEMO_STUDENT = "620200001"
+DEMO_NAMES = {"620200001": "Alex Brown", "620200002": "Jordan Davis", "620200003": "Kemar Smith"}
+TRAINERS = [
+    ("700000001", "Devon Clarke", ["Strength", "Powerlifting"], "Eight years coaching strength and technique."),
+    ("700000002", "Kezia Reid", ["Mobility", "Weight loss"], "Certified coach focused on mobility and fat loss."),
+    ("700000003", "Marcus Hall", ["Cardio", "Sports conditioning"], "Former track athlete; conditioning plans."),
+]
+TEMPLATES = [   # (trainer, name, [(exercise, sets, reps, rest, kg)])
+    ("700000001", "Beginner full body", [("Squat", "3", "8", "120", "40"), ("Bench Press", "3", "8", "120", "30"),
+                                         ("Barbell Row", "3", "10", "90", "30"), ("Plank", "3", "1", "60", "0")]),
+    ("700000002", "Mobility and core", [("Lunges", "3", "12", "60", "0"), ("Romanian Deadlift", "3", "10", "90", "20"),
+                                        ("Plank", "3", "1", "45", "0")]),
+    ("700000003", "Upper body pump", [("Pull-Ups", "4", "6", "90", "0"), ("Incline Dumbbell Press", "3", "10", "90", "14"),
+                                      ("Bicep Curl", "3", "12", "60", "10")]),
+]
 
 
 def arrivalChance(t: datetime, week: int) -> float:
@@ -85,10 +108,15 @@ def main():
         return print("Data already exists; use --reset to replace it.")
 
     students = [f"620200{i:03d}" for i in range(1, 121)]
+    passwordHash = generate_password_hash(DEMO_PASSWORD)   # one salted hash shared by the demo accounts
+    account = lambda uwiId, name, role, **extra: dict(
+        {"uwiId": uwiId, "name": name, "role": role, "passwordHash": passwordHash, "failedLogins": 0,
+         "lockedUntil": None, "routineIds": []}, **extra)
     UserRepository(args.dataDir).saveMany(
-        [{"uwiId": STAFF_ID, "name": "Front Desk", "role": "staff"},
-         {"uwiId": "100000002", "name": "Gym Operator", "role": "operator"}]
-        + [{"uwiId": s, "name": f"Student {s[-3:]}", "role": "student"} for s in students])
+        [account(STAFF_ID, "Front Desk", "staff"), account(OPERATOR_ID, "Gym Operator", "operator")]
+        + [account(uwiId, name, "trainer", specialisations=spec, bio=bio) for uwiId, name, spec, bio in TRAINERS]
+        + [account(s, DEMO_NAMES.get(s, f"Student {s[-3:]}"), "student", workoutSharing=s == DEMO_STUDENT)
+           for s in students])
 
     rng, end = random.Random(2140), date.today() - timedelta(days=1)
     start = end - timedelta(weeks=args.weeks) + timedelta(days=1)
@@ -103,6 +131,35 @@ def main():
     QueueRepository(args.dataDir).add(*allRecords)
     print(f"{start} to {end}: {sum(e.direction == Direction.IN for e in allEvents)} visits, "
           f"{len(allRecords)} queue records in {args.dataDir}/")
+    seedTrainingData(args.dataDir)
+    print(f"Demo logins (password {DEMO_PASSWORD}): student {DEMO_STUDENT}, trainer {TRAINERS[0][0]}, "
+          f"staff {STAFF_ID}, operator {OPERATOR_ID}")
+
+
+def seedTrainingData(dataDir: str) -> None:
+    """Trainers' free times for the next week, template routines, and a booked demo session."""
+    now = datetime.now()
+    slots, day = [], now.date() + timedelta(days=1)
+    while len({s.start.date() for s in slots}) < 6:
+        for opens, closes in OPENING_HOURS[day.weekday()]:
+            for t, (trainerId, *_rest) in zip(range(opens.hour + 1, closes.hour - 1, 3), TRAINERS * 3):
+                start = datetime.combine(day, datetime.min.time()).replace(hour=t)
+                slots.append(TimeSlot(trainerId, start, start + timedelta(hours=1)))
+        day += timedelta(days=1)
+    TimeSlotRepository(dataDir).add(*slots)
+
+    routines = buildRoutineService(dataDir)
+    for trainerId, name, rows in TEMPLATES:
+        routines.create(trainerId, name, parseExercises(*map(list, zip(*rows))), isPublic=True)
+    routines.create(DEMO_STUDENT, "My push day", parseExercises(
+        ["Bench Press", "Overhead Press", "Tricep Pushdown"], ["3", "3", "3"], ["8", "10", "12"],
+        ["90", "90", "60"], ["40", "25", "15"]))
+
+    # One confirmed session tomorrow, so the trainer has a client and the student a booking
+    booking = buildBookingService(dataDir)
+    first = next(s for s in slots if s.trainerId == TRAINERS[0][0])
+    request = booking.requestBooking(DEMO_STUDENT, first.slotId)
+    booking.respondToRequest(TRAINERS[0][0], request.bookingId, accept=True)
 
 
 if __name__ == "__main__":

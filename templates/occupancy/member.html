@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Gym occupancy{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Gym occupancy</h1><p>Updates every few seconds. Only counts are shown, never names.</p></div></div>
+
+<div id="called" class="callout good" role="alert" {% if not status.you.called %}hidden{% endif %}>
+	<strong>It's your turn!</strong> Check in at the front desk within <span data-k="callSecondsLeft">{{ status.you.callSecondsLeft }}</span> seconds, or your spot goes to the next person.
+</div>
+<div id="leave" class="callout" role="alert" {% if not status.you.askedToLeave %}hidden{% endif %}>
+	Your 1-hour time limit is up and people are waiting. Please check out at the front desk.
+</div>
+
+<div class="grid grid-3">
+	<section class="card">
+		<div class="stat-label">People inside</div>
+		<div class="stat"><span data-k="occupancy">{{ status.occupancy }}</span><small> / {{ status.maxCapacity }}</small></div>
+		<div class="meter" id="meter"><span style="width: {{ (100 * status.occupancy / status.maxCapacity)|round|int }}%"></span></div>
+		<div class="muted" data-k="level">{{ status.level }}</div>
+	</section>
+	<section class="card">
+		<div class="stat-label">Waiting in the queue</div>
+		<div class="stat" data-k="numInQueue">{{ status.numInQueue }}</div>
+		<div class="muted">Estimated wait to get in: <strong><span data-k="estimatedWaitMinutes">{{ status.estimatedWaitMinutes }}</span> min</strong></div>
+	</section>
+	<section class="card">
+		<div class="stat-label">Today's hours</div>
+		<div class="stat" style="font-size:1.3rem">{{ status.hoursToday }}</div>
+		<div class="muted" data-k="openText">{{ 'Open now' if status.gymOpen else 'Closed now' }}</div>
+	</section>
+</div>
+
+<section class="card" aria-labelledby="you-title">
+	<h2 id="you-title">You</h2>
+	<div id="you-text">
+	{% if status.you.inside %}
+		<p>You're checked in ({{ status.you.minutesInside }} min so far).</p>
+	{% elif status.you.inQueue %}
+		<p>You're number <strong>{{ status.you.position }}</strong> in the queue. Estimated wait: about <strong>{{ status.you.etaMinutes }} min</strong>.</p>
+	{% else %}
+		<p class="muted">Not checked in.</p>
+	{% endif %}
+	</div>
+	{% if not status.you.inside and not status.you.inQueue %}
+	<form method="post" action="{{ url_for('occupancy.requestEntry') }}">
+		<p class="small muted">If the gym is full you'll join the queue and get a notification when it's your turn. If there's space, just go to the front desk.</p>
+		<button class="btn" type="submit">Request entry</button>
+	</form>
+	{% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+	// Refresh the counts every 5 seconds (SRS 3.1.1: within 10 seconds)
+	let last = {{ status|tojson }};
+	async function refresh() {
+		try {
+			const r = await fetch("{{ url_for('occupancy.memberStatus') }}", {headers: {Accept: 'application/json'}});
+			if (r.redirected) { location.reload(); return; }   // logged out: show the login page
+			if (!r.ok) return;
+			const s = await r.json();
+			for (const el of document.querySelectorAll('[data-k]')) {
+				const k = el.dataset.k;
+				if (k === 'callSecondsLeft') el.textContent = s.you.callSecondsLeft;
+				else if (k === 'openText') el.textContent = s.gymOpen ? 'Open now' : 'Closed now';
+				else if (k in s) el.textContent = s[k];
+			}
+			const meter = document.getElementById('meter');
+			meter.className = 'meter' + (s.isFull ? ' full' : s.level === 'Almost full' ? ' almost' : '');
+			meter.firstElementChild.style.width = Math.round(100 * s.occupancy / s.maxCapacity) + '%';
+			document.getElementById('called').hidden = !s.you.called;
+			document.getElementById('leave').hidden = !s.you.askedToLeave;
+			// Reload when the student's own situation changes, so the buttons and text match
+			if (s.you.inside !== last.you.inside || s.you.inQueue !== last.you.inQueue || s.you.position !== last.you.position) location.reload();
+			last = s;
+		} catch (e) { /* try again next time */ }
+	}
+	setInterval(refresh, 5000);
+</script>
+{% endblock %}

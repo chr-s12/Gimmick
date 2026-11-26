@@ -55,6 +55,7 @@ class Booking:
     replacesBookingId: Optional[str] = None   # set when this request moves an existing session
     studentReminded: bool = False
     bookingId: str = field(default_factory=lambda: uuid.uuid4().hex)
+    trainerReminded: bool = False
 
     def isActive(self) -> bool:
         return self.status in (BookingStatus.PENDING, BookingStatus.ACCEPTED)
@@ -63,9 +64,10 @@ class Booking:
         return {"bookingId": self.bookingId, "studentId": self.studentId, "trainerId": self.trainerId,
                 "start": _iso(self.start), "end": _iso(self.end), "status": self.status.value,
                 "slotId": self.slotId, "replacesBookingId": self.replacesBookingId,
-                "studentReminded": self.studentReminded}
+                "studentReminded": self.studentReminded, "trainerReminded": self.trainerReminded}
 
     @classmethod
     def fromDict(cls, d: dict) -> "Booking":
         return cls(d["studentId"], d["trainerId"], _dt(d["start"]), _dt(d["end"]), BookingStatus(d["status"]),
-                   d.get("slotId"), d.get("replacesBookingId"), d.get("studentReminded", False), d["bookingId"])
+                   d.get("slotId"), d.get("replacesBookingId"), d.get("studentReminded", False), d["bookingId"],
+                   d.get("trainerReminded", False))

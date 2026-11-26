@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My sessions{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My sessions</h1><p>Confirmed sessions and requests waiting for a trainer. You'll be reminded an hour before each session.</p></div>
+	<a class="btn" href="{{ url_for('booking.trainers') }}">Book a trainer</a></div>
+{% if sessions %}
+<div class="card">
+	<ul class="list">
+	{% for s in sessions %}
+		<li><span class="grow"><strong>{{ s.label }}</strong> with {{ s.trainerName }}<br>
+			{% if s.status == 'Accepted' %}<span class="tag good">Confirmed</span>
+			{% elif s.isChangeRequest %}<span class="tag warn">Change request, waiting for trainer</span>
+			{% else %}<span class="tag warn">Waiting for trainer</span>{% endif %}</span>
+			<span class="actions">
+				{% if s.status == 'Accepted' %}<a class="btn small secondary" href="{{ url_for('booking.change', bookingId=s.bookingId) }}">Change time</a>{% endif %}
+				<a class="btn small danger" href="{{ url_for('booking.cancel', bookingId=s.bookingId) }}">{{ 'Cancel' if s.status == 'Accepted' else 'Withdraw' }}</a>
+			</span></li>
+	{% endfor %}
+	</ul>
+</div>
+{% else %}
+<div class="empty">You have no upcoming sessions. <a href="{{ url_for('booking.trainers') }}">Find a trainer</a>.</div>
+{% endif %}
+{% endblock %}

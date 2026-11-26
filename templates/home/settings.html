@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Trainer profile' if user.role == 'trainer' else 'Settings' }}{% endblock %}
+{% block content %}
+{% if user.role == 'student' %}
+<div class="page-head"><div><h1>Settings</h1><p>Control what your trainers can see.</p></div></div>
+<form class="card" method="post">
+	<h2>Workout sharing</h2>
+	<p class="muted">When this is on, trainers you have an upcoming session with can see your logged workouts and add routines to your profile. When it's off, they can't.</p>
+	<label class="check"><input type="checkbox" name="workoutSharing" {% if user.workoutSharing %}checked{% endif %}> Share my workouts with my trainers</label>
+	<p></p>
+	<button class="btn" type="submit">Save</button>
+</form>
+{% else %}
+<div class="page-head"><div><h1>Trainer profile</h1><p>This is what students see when they choose a trainer.</p></div></div>
+<form class="card" method="post">
+	<div class="field">
+		<label for="specialisations">Specialities</label>
+		<input type="text" id="specialisations" name="specialisations" value="{{ (user.specialisations or [])|join(', ') }}" placeholder="Strength, Mobility" required>
+		<p class="small muted">Separate them with commas.</p>
+	</div>
+	<div class="field">
+		<label for="bio">About you</label>
+		<textarea id="bio" name="bio" rows="4" maxlength="500" placeholder="Your experience and how you like to train clients">{{ user.bio or '' }}</textarea>
+	</div>
+	<button class="btn" type="submit">Save profile</button>
+</form>
+{% endif %}
+{% endblock %}

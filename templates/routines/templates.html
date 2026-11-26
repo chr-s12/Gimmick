@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Templates{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Pre-designed routines</h1><p>Templates from the gym's trainers. Adopt one to get your own copy you can change.</p></div>
+	<a class="btn secondary" href="{{ url_for('routines.myRoutines') }}">Back to my routines</a></div>
+{% if templates %}
+<div class="grid grid-2">
+{% for t in templates %}
+	<section class="card">
+		<h2>{{ t.name }}</h2>
+		<p class="small muted">By {{ t.author }} &middot; {{ t.exercises|length }} exercises</p>
+		<ul class="routine-exercises small">{% for e in t.exercises %}<li>{{ e.name }}: {{ e.sets }} &times; {{ e.reps }}{% if e.weight %} @ {{ '%g'|format(e.weight) }} kg{% endif %}</li>{% endfor %}</ul>
+		<p></p>
+		<form method="post" action="{{ url_for('routines.adopt', routineId=t.routineId) }}"><button class="btn small" type="submit">Add to my routines</button></form>
+	</section>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty">No templates have been published yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Front desk{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Front desk</h1><p>Log check-ins and check-outs and manage the queue. Updates every 5 seconds.</p></div>
+	<div class="muted small">Today: {{ status.hoursToday }} &middot; <span data-k="openText">{{ 'Open' if status.gymOpen else 'Closed' }}</span></div></div>
+
+<div class="grid grid-3">
+	<section class="card">
+		<div class="stat-label">Inside</div>
+		<div class="stat"><span data-k="occupancy">{{ status.occupancy }}</span><small> / {{ status.maxCapacity }}</small></div>
+		<div class="meter" id="meter"><span style="width: {{ (100 * status.occupancy / status.maxCapacity)|round|int }}%"></span></div>
+		<div class="muted" data-k="level">{{ status.level }}</div>
+	</section>
+	<section class="card">
+		<div class="stat-label">In the queue</div>
+		<div class="stat" data-k="numInQueue">{{ status.numInQueue }}</div>
+		<div class="muted">Wait for a newcomer: <span data-k="estimatedWaitMinutes">{{ status.estimatedWaitMinutes }}</span> min</div>
+	</section>
+	<section class="card">
+		<form method="post" action="{{ url_for('occupancy.checkIn') }}" autocomplete="off">
+			<label for="in-id">Check in (UWI ID)</label>
+			<div class="field-row"><div class="field" style="margin:0"><input type="text" id="in-id" name="uwiId" inputmode="numeric" required autofocus></div><button class="btn" type="submit">Check in</button></div>
+		</form>
+		<p class="small muted" style="margin-top:8px">When the gym is full, a walk-in is added to the queue instead.</p>
+	</section>
+</div>
+
+<div id="live">
+{% include "occupancy/_deskLists.html" %}
+</div>
+
+<section class="card">
+	<h2>Add someone to the queue</h2>
+	<form method="post" action="{{ url_for('occupancy.addToQueue') }}" autocomplete="off" class="field-row">
+		<div class="field" style="margin:0"><label for="q-id">UWI ID</label><input type="text" id="q-id" name="uwiId" inputmode="numeric" required></div>
+		<button class="btn secondary" type="submit">Add to queue</button>
+	</form>
+	<p class="small muted" style="margin-top:8px">Only possible while the gym is full.</p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+	// Refresh every 5 seconds (SRS 3.1.1). Lists are re-rendered from the JSON status.
+	const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+	const removeUrl = id => "{{ url_for('occupancy.removeFromQueue', entryId='ENTRY') }}".replace('ENTRY', id);
+	async function refresh() {
+		try {
+			const r = await fetch("{{ url_for('occupancy.deskStatus') }}");
+			if (r.redirected) { location.reload(); return; }   // logged out: show the login page
+			if (!r.ok) return;
+			const s = await r.json();
+			document.querySelectorAll('[data-k]').forEach(el => {
+				const k = el.dataset.k;
+				if (k === 'openText') el.textContent = s.gymOpen ? 'Open' : 'Closed'; else if (k in s) el.textContent = s[k];
+			});
+			const meter = document.getElementById('meter');
+			meter.className = 'meter' + (s.isFull ? ' full' : s.level === 'Almost full' ? ' almost' : '');
+			meter.firstElementChild.style.width = Math.round(100 * s.occupancy / s.maxCapacity) + '%';
+			document.getElementById('queue-body').innerHTML = s.queue.length ? s.queue.map(q => `
+				<li class="${q.called ? 'highlight' : ''}"><span class="grow"><strong>${q.position}. ${esc(q.name)}</strong> <span class="muted small">${esc(q.uwiId)}</span><br>
+				${q.called ? `<span class="tag good">Called: ${q.callSecondsLeft}s left to check in</span>` : `<span class="small muted">About ${q.etaMinutes} min</span>`}</span>
+				<form class="inline" method="post" action="${removeUrl(q.entryId)}"><button class="btn small danger" type="submit">Remove</button></form></li>`).join('')
+				: '<li class="muted">Nobody is waiting.</li>';
+			document.getElementById('inside-body').innerHTML = s.inside.length ? s.inside.map(p => `
+				<li><span class="grow"><strong>${esc(p.name)}</strong> <span class="muted small">${esc(p.uwiId)} &middot; since ${p.since} (${p.minutesInside} min)</span>
+				${s.askedToLeave.some(a => a.uwiId === p.uwiId) ? '<span class="tag accent">Time up</span>' : ''}</span>
+				<form class="inline" method="post" action="{{ url_for('occupancy.checkOut') }}"><input type="hidden" name="uwiId" value="${esc(p.uwiId)}"><button class="btn small secondary" type="submit">Check out</button></form></li>`).join('')
+				: '<li class="muted">Nobody is checked in.</li>';
+		} catch (e) { /* try again next time */ }
+	}
+	setInterval(refresh, 5000);
+</script>
+{% endblock %}

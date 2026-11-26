@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{% block title %}Gymmick{% endblock %} | Gymmick</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+	{% block head %}{% endblock %}
+</head>
+<body>
+	<a class="skip-link" href="#content">Skip to content</a>
+	<div class="app">
+		<aside class="sidebar" aria-label="Main navigation">
+			<a class="brand" href="{{ url_for('home.index') }}"><span class="brand-mark">G</span> Gymmick</a>
+			<nav class="nav">
+				{% for endpoint, label in navigation %}
+					<a href="{{ url_for(endpoint) }}"{% if endpoint == activeNav %} aria-current="page"{% endif %}>{{ label }}</a>
+				{% endfor %}
+				<a href="{{ url_for('home.notifications') }}"{% if request.endpoint == 'home.notifications' %} aria-current="page"{% endif %}>Notifications
+					{% if unreadCount %}<span class="badge" aria-label="{{ unreadCount }} unread">{{ unreadCount }}</span>{% endif %}</a>
+			</nav>
+			<div class="sidebar-bottom">
+				<div class="who">{{ currentUser.name }}<small>{{ roleLabel }} &middot; {{ currentUser.uwiId }}</small></div>
+				<form method="post" action="{{ url_for('auth.logout') }}"><button class="btn-link" type="submit">Log out</button></form>
+			</div>
+		</aside>
+		<main class="content" id="content" tabindex="-1">
+			{% with messages = get_flashed_messages(with_categories=true) %}
+				{% for category, message in messages %}<div class="flash {{ category }}" role="status">{{ message }}</div>{% endfor %}
+			{% endwith %}
+			{% block content %}{% endblock %}
+		</main>
+	</div>
+	{% block scripts %}{% endblock %}
+</body>
+</html>

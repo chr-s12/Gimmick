@@ -9,11 +9,7 @@ from progress.charts import (
     build_exercise_chart,
     build_weekly_chart,
 )
-from progress.mock_dependencies import (
-    get_student,
-    get_student_routines,
-    get_student_routine
-)
+from progress import mock_dependencies
 
 from progress.periods import PERIOD_LABELS, PeriodFilterError, resolve_period
 from progress.repository import WorkoutLogStorageError
@@ -21,6 +17,39 @@ from progress.repository import WorkoutLogStorageError
 
 _DEMO_STUDENT_ID = "ST001"
 _JAMAICA = ZoneInfo("America/Jamaica")
+
+
+class _FixtureDependencies:
+    """The demo student and fixture routines, used when the app doesn't provide real accounts."""
+
+    @staticmethod
+    def current_student_id():
+        return _DEMO_STUDENT_ID
+
+    get_student = staticmethod(mock_dependencies.get_student)
+    get_student_routines = staticmethod(mock_dependencies.get_student_routines)
+    get_student_routine = staticmethod(mock_dependencies.get_student_routine)
+
+
+def _dependencies():
+    """The logged-in student and their saved routines (app.ProgressAccounts), or the fixtures."""
+    return current_app.extensions.get("progress_dependencies", _FixtureDependencies)
+
+
+def _current_student_id():
+    return _dependencies().current_student_id()
+
+
+def get_student(student_id):
+    return _dependencies().get_student(student_id)
+
+
+def get_student_routines(student_id):
+    return _dependencies().get_student_routines(student_id)
+
+
+def get_student_routine(student_id, routine_id):
+    return _dependencies().get_student_routine(student_id, routine_id)
 
 
 progress_bp = Blueprint(
@@ -44,7 +73,7 @@ def format_completed_time(completed_at):
 
 @progress_bp.route("/")
 def dashboard():
-    student_id = _DEMO_STUDENT_ID
+    student_id = _current_student_id()
 
     student = get_student(student_id)
     routines = get_student_routines(student_id)
@@ -58,7 +87,7 @@ def dashboard():
 
 @progress_bp.route("/log/<routine_id>", methods=["GET", "POST"])
 def log_workout(routine_id):
-    student_id = _DEMO_STUDENT_ID
+    student_id = _current_student_id()
     routine = get_student_routine(student_id, routine_id)
 
     if routine is None:
@@ -100,7 +129,7 @@ def log_workout(routine_id):
 def workout_history():
     service = current_app.extensions["progress_service"]
     try:
-        workouts = service.get_workout_history(_DEMO_STUDENT_ID)
+        workouts = service.get_workout_history(_current_student_id())
     except WorkoutLogStorageError:
         current_app.logger.exception("Could not retrieve workout history")
         return render_template(
@@ -116,7 +145,7 @@ def workout_history():
 def workout_summary(workout_id):
     service = current_app.extensions["progress_service"]
     try:
-        workout = service.get_workout(_DEMO_STUDENT_ID, workout_id)
+        workout = service.get_workout(_current_student_id(), workout_id)
     except WorkoutLogStorageError:
         current_app.logger.exception("Could not retrieve completed workout")
         return render_template(
@@ -173,7 +202,7 @@ def analytics_dashboard():
     service = current_app.extensions["progress_service"]
     try:
         analytics = service.get_analytics(
-            _DEMO_STUDENT_ID, start_date=start_date, end_date=end_date, as_of=as_of,
+            _current_student_id(), start_date=start_date, end_date=end_date, as_of=as_of,
         )
     except (WorkoutLogStorageError, ValueError):
         current_app.logger.exception("Could not calculate student progress")

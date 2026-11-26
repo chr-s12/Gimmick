@@ -61,6 +61,8 @@
 }
 .gymmick-progress .progress-nav a:hover { background: #233c62; color: #fff; }
 .gymmick-progress .progress-nav a[aria-current] { background: #e3efff; color: #112e59; }
+.gymmick-progress .progress-home-link { color: #d9e5f7; font-weight: 650; text-decoration: none; }
+.gymmick-progress .progress-home-link:hover { color: #fff; text-decoration: underline; }
 
 .gymmick-progress .page-heading { margin-bottom: clamp(1.4rem, 4vw, 2.3rem); }
 .gymmick-progress .page-heading > p,

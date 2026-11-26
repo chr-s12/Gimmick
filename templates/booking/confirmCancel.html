@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Cancel session{% endblock %}
+{% block content %}
+<div class="card">
+	<h1>{{ 'Cancel this session?' if session.status == 'Accepted' else 'Withdraw this request?' }}</h1>
+	<p><strong>{{ session.label }}</strong> with {{ session.trainerName }}.</p>
+	<p class="muted">{{ session.trainerName }} will be notified.</p>
+	<form method="post" class="actions">
+		<button class="btn" type="submit">Yes, {{ 'cancel' if session.status == 'Accepted' else 'withdraw' }} it</button>
+		<a class="btn secondary" href="{{ url_for('booking.sessions') }}">No, keep it</a>
+	</form>
+</div>
+{% endblock %}

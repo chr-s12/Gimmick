@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Usage reports{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Gym usage report</h1><p>Totals and averages only. Reports never show names or UWI IDs.</p></div></div>
+
+<form class="card" method="get" action="{{ url_for('reports.report') }}">
+	<div class="field-row">
+		<div class="field"><label for="start">From</label><input type="date" id="start" name="start" value="{{ start }}" required></div>
+		<div class="field"><label for="end">To</label><input type="date" id="end" name="end" value="{{ end }}" required></div>
+		<div class="field" style="flex:0"><button class="btn" type="submit">Generate report</button></div>
+	</div>
+</form>
+
+{% if a %}
+{% set q = {'start': start, 'end': end} %}
+<div class="actions" style="margin-bottom:16px">
+	<a class="btn secondary" href="{{ url_for('reports.exportCsv', **q) }}">Export CSV</a>
+	<span class="small muted">{{ summary.startDate }} to {{ summary.endDate }}</span>
+</div>
+
+<div class="grid grid-3">
+	<section class="card"><div class="stat-label">Total visits</div><div class="stat">{{ summary.totalVisits }}</div></section>
+	<section class="card"><div class="stat-label">Peak hours</div><div class="stat" style="font-size:1.25rem">{{ summary.peakHours|join(', ') }}</div></section>
+	<section class="card"><div class="stat-label">Busiest days</div><div class="stat" style="font-size:1.1rem">{% for d in a.busiestDays %}{{ d.strftime('%a %d %b') }}{{ ', ' if not loop.last }}{% endfor %}</div></section>
+	<section class="card"><div class="stat-label">Times at full capacity</div><div class="stat">{{ summary.timesAtCapacity }}</div><div class="muted small">{{ summary.timeAtCapacity }} in total</div></section>
+	<section class="card"><div class="stat-label">Average queue wait while full</div><div class="stat" style="font-size:1.4rem">{{ summary.averageWaitAtCapacity }}</div><div class="muted small">All waits: {{ summary.averageWait }}</div></section>
+	<section class="card"><div class="stat-label">Weekly trend</div><div class="stat" style="font-size:1.4rem;text-transform:capitalize">{{ summary.trend }}</div></section>
+</div>
+
+{% for kind, title in [('hourly', 'Visits by hour'), ('daily', 'Visits per day'), ('weekly', 'Visits per week')] %}
+<section class="card chart-card" aria-label="{{ title }}">
+	<div class="page-head" style="margin-bottom:6px"><h2>{{ title }}</h2>
+		<a class="btn small secondary" href="{{ url_for('reports.chart', kind=kind, **q) }}">Save chart</a></div>
+	{{ charts[kind]|safe }}
+	{% if kind == 'weekly' and a.weekly|length < 2 %}<p class="small muted">Choose a range of at least two weeks to see whether attendance is rising or falling.</p>{% endif %}
+</section>
+{% endfor %}
+
+<section class="card">
+	<h2>Full-capacity periods</h2>
+	{% if periods %}
+	<div class="table-wrap"><table>
+		<thead><tr><th>From</th><th>Until</th><th>Duration</th></tr></thead>
+		<tbody>{% for s, e, d in periods %}<tr><td>{{ s.strftime('%a %d %b, %H:%M') }}</td><td>{{ e.strftime('%H:%M') }}</td><td>{{ d }}</td></tr>{% endfor %}</tbody>
+	</table></div>
+	{% else %}
+	<p class="muted">The gym didn't reach full capacity in this range.</p>
+	{% endif %}
+</section>
+{% elif not error %}
+<div class="empty">Choose a date range and press Generate report.</div>
+{% endif %}
+{% endblock %}

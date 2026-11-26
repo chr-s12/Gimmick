@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="page-head">
+	<div><h1>Hi, {{ currentUser.name.split()[0] }}</h1><p>Your routines, sessions and the gym right now.</p></div>
+	<div class="actions">
+		<a class="btn" href="{{ url_for('progress.dashboard') }}">Log a workout</a>
+		<a class="btn secondary" href="{{ url_for('routines.create') }}">New routine</a>
+	</div>
+</div>
+
+<div class="grid grid-2">
+	<section class="card" aria-labelledby="gym-title">
+		<h2 id="gym-title">Gym occupancy</h2>
+		<div class="stat">{{ gym.occupancy }}<small> / {{ gym.maxCapacity }} inside</small></div>
+		<div class="meter {% if gym.isFull %}full{% elif gym.level == 'Almost full' %}almost{% endif %}"><span style="width: {{ (100 * gym.occupancy / gym.maxCapacity)|round|int }}%"></span></div>
+		<p class="muted">{% if not gym.gymOpen %}Closed now. Today's hours: {{ gym.hoursToday }}{% elif gym.isFull %}Full. Estimated wait about {{ gym.estimatedWaitMinutes }} min.{% else %}{{ gym.level }}.{% endif %}</p>
+		<a href="{{ url_for('occupancy.member') }}">Open occupancy &rarr;</a>
+	</section>
+
+	<section class="card" aria-labelledby="sessions-title">
+		<h2 id="sessions-title">Upcoming sessions</h2>
+		{% if sessions %}
+			<ul class="list">
+			{% for s in sessions %}
+				<li><span class="grow"><strong>{{ s.label }}</strong><br><span class="muted small">with {{ s.trainerName }}</span></span>
+					<span class="tag {{ 'good' if s.status == 'Accepted' else 'warn' }}">{{ 'Confirmed' if s.status == 'Accepted' else 'Waiting for trainer' }}</span></li>
+			{% endfor %}
+			</ul>
+		{% else %}
+			<p class="muted">No sessions booked.</p>
+		{% endif %}
+		<a href="{{ url_for('booking.trainers') }}">Book a trainer &rarr;</a>
+	</section>
+</div>
+
+<section class="card" aria-labelledby="routines-title">
+	<div class="page-head" style="margin-bottom:8px"><h2 id="routines-title">My routines</h2><a href="{{ url_for('routines.myRoutines') }}">Manage routines &rarr;</a></div>
+	{% if trainerRoutines %}
+		<h3>From your trainer</h3>
+		<ul class="list">
+		{% for r in trainerRoutines %}
+			<li><span class="grow"><strong>{{ r.name }}</strong> <span class="tag info">Trainer-added</span><br>
+				<span class="muted small">Added by your trainer {{ r.addedByName }} &middot; {{ r.exercises|length }} exercises</span></span>
+				<a class="btn small secondary" href="{{ url_for('progress.log_workout', routine_id=r.routineId) }}">Log workout</a></li>
+		{% endfor %}
+		</ul>
+	{% endif %}
+	{% if myRoutines %}
+		{% if trainerRoutines %}<h3 style="margin-top:12px">Your own</h3>{% endif %}
+		<ul class="list">
+		{% for r in myRoutines %}
+			<li><span class="grow"><strong>{{ r.name }}</strong><br><span class="muted small">{{ r.exercises|map(attribute='name')|join(', ') }}</span></span>
+				<a class="btn small secondary" href="{{ url_for('progress.log_workout', routine_id=r.routineId) }}">Log workout</a></li>
+		{% endfor %}
+		</ul>
+	{% elif not trainerRoutines %}
+		<div class="empty">You don't have any routines yet. <a href="{{ url_for('routines.create') }}">Build one</a> or <a href="{{ url_for('routines.templates') }}">pick a ready-made template</a>.</div>
+	{% endif %}
+</section>
+
+{% if notifications %}
+<section class="card" aria-labelledby="note-title">
+	<div class="page-head" style="margin-bottom:8px"><h2 id="note-title">Latest notifications</h2><a href="{{ url_for('home.notifications') }}">See all &rarr;</a></div>
+	<ul class="list">{% for n in notifications %}<li><span class="grow {{ '' if n.read else 'unread' }}">{{ n.message }}</span><span class="notice-time">{{ n.createdAt|when }}</span></li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -161,7 +161,7 @@ class ProgressAnalyticsServiceTests(unittest.TestCase):
         load.assert_called_once_with("ST001")
 
     def test_existing_flask_save_is_visible_in_fresh_app_service(self):
-        config = {"TESTING": True, "WORKOUT_STORAGE_PATH": self.path}
+        config = {"TESTING": True, "PROGRESS_FIXTURES": True, "WORKOUT_STORAGE_PATH": self.path}
         app = create_app(config)
         form = {
             f"{field}_{index}": value

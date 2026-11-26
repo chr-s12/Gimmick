@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Edit time{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Edit available time</h1><p>Students will see the new time the next time they look at your profile.</p></div></div>
+<form class="card" method="post">
+	<div class="field-row">
+		<div class="field"><label for="date">Date</label><input type="date" id="date" name="date" value="{{ slot.start.date().isoformat() }}" required></div>
+		<div class="field"><label for="start">Start</label><input type="time" id="start" name="start" value="{{ slot.start.strftime('%H:%M') }}" required></div>
+		<div class="field"><label for="end">End</label><input type="time" id="end" name="end" value="{{ slot.end.strftime('%H:%M') }}" required></div>
+	</div>
+	<div class="actions">
+		<button class="btn" type="submit">Save</button>
+		<a class="btn secondary" href="{{ url_for('availability.schedule') }}">Cancel</a>
+	</div>
+</form>
+{% endblock %}

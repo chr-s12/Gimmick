@@ -43,6 +43,12 @@ class Routine:
     def getExerciseList(self) -> list[Exercise]:
         return self._exerciseList
 
+    def setExercises(self, exercises: list[Exercise]) -> None:
+        """Replace the whole exercise list when a routine is edited (AC-01.0, AC-01.3)."""
+        if not exercises:
+            raise ValueError("Routines must have at least one exercise present.")
+        self._exerciseList = list(exercises)
+
     def to_dict(self) -> dict:
         return {
             "routineId": self._routineId,
@@ -122,6 +128,12 @@ class Routine:
     @classmethod
     def getPublicRoutines(cls) -> list['Routine']:
         return [r for r in cls.loadAllRoutines() if r.getIsPublic()]
+
+
+def setDataDir(data_dir) -> None:
+    """Keep routines.json in the app's data folder with every other feature's files."""
+    global routine_file_path
+    routine_file_path = Path(data_dir) / "routines.json"
 
 
 
