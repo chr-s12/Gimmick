@@ -25,6 +25,12 @@ New students and trainers can also register on the sign-up page.
 Check-ins are only accepted during gym opening hours (SRS 1.6.8). To try the front desk outside those hours,
 start the app with the environment variable `GYMMICK_IGNORE_HOURS=1`.
 
+To show the queue without typing 20 check-ins, `python seedData.py --fill-gym` checks demo students in
+until 19 people are inside (`--fill-gym 20` makes the gym full). It works while the app is running.
+
+A step-by-step guide with screenshots of every feature is in [docs/userGuide.md](docs/userGuide.md), and
+the 8-minute demo script is in [docs/demoRunSheet.md](docs/demoRunSheet.md).
+
 ### Where each feature lives
 
 Each feature follows the SDS layers: a Blueprint in `controllers/` checks the login and role, calls one
