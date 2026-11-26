@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ title }}</h1><p>Choose exercises and set the sets and reps. Nothing is saved until you press Save.</p></div></div>
+<form class="card" method="post" action="{{ action }}" novalidate>
+	<div class="field">
+		<label for="routine_name">Routine name</label>
+		<input type="text" id="routine_name" name="routine_name" value="{{ name }}" maxlength="60" required>
+	</div>
+	{% include "routines/_rows.html" %}
+	{% if currentUser.role == 'trainer' %}
+		<p></p>
+		<label class="check"><input type="checkbox" name="is_public" {% if isPublic %}checked{% endif %}> Publish as a pre-designed template students can adopt</label>
+	{% endif %}
+	<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+	<div class="actions">
+		<button class="btn" type="submit">Save routine</button>
+		<a class="btn secondary" href="{{ url_for('routines.myRoutines') }}">Cancel</a>
+	</div>
+</form>
+{% endblock %}

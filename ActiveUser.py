@@ -2,6 +2,7 @@ from Routine import Routine
 from Exercise import Exercise
 from pathlib import Path
 import json
+import os
 
 users_file_path = Path("users.json")
 
@@ -14,6 +15,12 @@ class ActiveUser:
 
     def getUserId(self):
         return self._idnum
+
+    def getIdNum(self):
+        return self._idnum
+
+    def getUsername(self):
+        return self._username
     def buildRoutine(self,routineName: str,exercises: list[Exercise],isPublic: bool = False) -> Routine:
         if not exercises:
             raise ValueError("Cannot build a routine with no exercises.")
@@ -39,10 +46,11 @@ class ActiveUser:
         return routine.saveRoutine()
 
     def toDict(self) -> dict:
+        # Same keys as the shared users.json record that every feature reads (accounts/repositories.py)
         return {
-            "ID Number": self._idnum,
-            "Username": self._username,
-            "Routine List": [routine.getRoutineId() for routine in self._routine_list]
+            "uwiId": self._idnum,
+            "name": self._username,
+            "routineIds": [routine.getRoutineId() for routine in self._routine_list]
         }
 
     def deleteRoutine(self, routine: Routine) -> bool:
@@ -82,34 +90,51 @@ class ActiveUser:
 
         user_data = target_user.toDict()
 
-        for i, existing in enumerate(users):
-            if existing.get("ID Number") == user_data["ID Number"]:
-                users[i] = user_data
+        for existing in users:
+            if _recordId(existing) == user_data["uwiId"]:
+                # Keep the fields other features store on the same record (password, role, sharing...)
+                for old_key in ("ID Number", "Username", "Routine List"):
+                    existing.pop(old_key, None)
+                existing.update(user_data)
                 break
         else:
             users.append(user_data)
 
-        with open(users_file_path, "w") as f:
-            json.dump(users, f, indent=4)
+        users_file_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = users_file_path.with_name(users_file_path.name + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2)
+        os.replace(tmp, users_file_path)
         return True
-    
-    @classmethod 
+
+    @classmethod
     def loadUser(cls, idnum: str) -> 'ActiveUser | None':
         if not users_file_path.exists():
             return None
-        with open(users_file_path, "r") as f:
+        with open(users_file_path, "r", encoding="utf-8") as f:
             try:
                 users = json.load(f)
             except json.JSONDecodeError:
                 return None
 
-        record = next((u for u in users if u.get("ID Number") == idnum), None)
+        record = next((u for u in users if _recordId(u) == idnum), None)
         if record is None:
             return None
 
-        user = cls(username=record["Username"], idnum=record["ID Number"])
+        user = cls(record.get("name", record.get("Username", "")), _recordId(record))
         all_routines = {r.getRoutineId(): r for r in Routine.loadAllRoutines()}
-        for r_id in record.get("Routine List", []):
+        for r_id in record.get("routineIds", record.get("Routine List", [])):
             if r_id in all_routines:
                 user._routine_list.append(all_routines[r_id])
         return user
+
+
+def _recordId(record: dict):
+    """Records use "uwiId"; ones saved before the shared format used "ID Number"."""
+    return record.get("uwiId", record.get("ID Number"))
+
+
+def setDataDir(data_dir) -> None:
+    """Keep users.json in the app's data folder with every other feature's files."""
+    global users_file_path
+    users_file_path = Path(data_dir) / "users.json"

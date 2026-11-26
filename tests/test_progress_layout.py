@@ -10,7 +10,7 @@ class ProgressLayoutTests(unittest.TestCase):
     def setUp(self):
         directory = self.enterContext(TemporaryDirectory())
         self.app = create_app({
-            "TESTING": True, "WORKOUT_STORAGE_PATH": Path(directory) / "workouts.json",
+            "TESTING": True, "PROGRESS_FIXTURES": True, "WORKOUT_STORAGE_PATH": Path(directory) / "workouts.json",
         })
         self.client = self.app.test_client()
 

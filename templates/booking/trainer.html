@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ trainer.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ trainer.name }}</h1>
+	<p>{% for s in trainer.specialisations %}<span class="tag info">{{ s }}</span> {% endfor %}</p></div>
+	<a class="btn secondary" href="{{ url_for('booking.trainers') }}">All trainers</a></div>
+{% if trainer.bio %}<div class="card"><h2>About</h2><p>{{ trainer.bio }}</p></div>{% endif %}
+
+<section class="card" aria-labelledby="times-title">
+	<h2 id="times-title">Times</h2>
+	{% if trainer.availableSlots or trainer.takenSlots %}
+	<ul class="list">
+		{% for s in trainer.availableSlots %}
+		<li><span class="grow"><strong>{{ s.label }}-{{ s.endLabel }}</strong> <span class="tag good">Available</span></span>
+			<form method="post" action="{{ url_for('booking.book', trainerId=trainer.uwiId) }}">
+				<input type="hidden" name="slotId" value="{{ s.slotId }}">
+				<button class="btn small" type="submit">Request this time</button>
+			</form></li>
+		{% endfor %}
+		{% for s in trainer.takenSlots %}
+		<li><span class="grow muted">{{ s.label }}-{{ s.endLabel }} <span class="tag">Unavailable</span></span></li>
+		{% endfor %}
+	</ul>
+	<p class="small muted">Your request goes to {{ trainer.name }} to confirm. The session is booked once they accept.</p>
+	{% else %}
+	<div class="empty">{{ trainer.name }} has no free times at the moment. Check back later.</div>
+	{% endif %}
+</section>
+{% endblock %}

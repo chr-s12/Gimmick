@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}My schedule{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My schedule</h1><p>Advertise the times you're free, answer requests and manage your sessions.</p></div></div>
+
+{% if schedule.requests %}
+<section class="card" aria-labelledby="req-title">
+	<h2 id="req-title">Booking requests <span class="tag accent">{{ schedule.requests|length }}</span></h2>
+	<ul class="list">
+	{% for r in schedule.requests %}
+		<li><span class="grow"><strong>{{ r.studentName }}</strong>: {{ r.label }}-{{ r.endLabel }}
+			{% if r.isChangeRequest %}<br><span class="small muted">Wants to move their {{ r.replacesLabel }} session to this time</span>{% endif %}</span>
+			<span class="actions">
+				<form class="inline" method="post" action="{{ url_for('availability.respond', bookingId=r.bookingId, answer='accept') }}"><button class="btn small" type="submit">Accept</button></form>
+				<form class="inline" method="post" action="{{ url_for('availability.respond', bookingId=r.bookingId, answer='decline') }}"><button class="btn small secondary" type="submit">Decline</button></form>
+				<a class="btn small danger" href="{{ url_for('availability.cancelSession', bookingId=r.bookingId) }}">Cancel</a>
+			</span></li>
+	{% endfor %}
+	</ul>
+</section>
+{% endif %}
+
+<section class="card" aria-labelledby="sess-title">
+	<h2 id="sess-title">Upcoming sessions</h2>
+	{% if schedule.sessions %}
+	<ul class="list">
+	{% for s in schedule.sessions %}
+		<li class="{{ 'highlight' if s.inProgress }}"><span class="grow"><strong>{{ s.label }}-{{ s.endLabel }}</strong> with {{ s.studentName }}
+			{% if s.inProgress %}<span class="tag accent">In progress</span>{% endif %}</span>
+			<span class="actions">
+				{% if not s.inProgress %}<a class="btn small secondary" href="{{ url_for('availability.moveSession', bookingId=s.bookingId) }}">Move</a>{% endif %}
+				<a class="btn small danger" href="{{ url_for('availability.cancelSession', bookingId=s.bookingId) }}">Cancel</a>
+			</span></li>
+	{% endfor %}
+	</ul>
+	{% else %}
+	<p class="muted">No confirmed sessions yet.</p>
+	{% endif %}
+</section>
+
+<section class="card" aria-labelledby="add-title">
+	<h2 id="add-title">Add an available time</h2>
+	<form method="post" action="{{ url_for('availability.addSlot') }}">
+		<div class="field-row">
+			<div class="field"><label for="date">Date</label><input type="date" id="date" name="date" value="{{ defaultDate }}" required></div>
+			<div class="field"><label for="start">Start</label><input type="time" id="start" name="start" value="10:00" required></div>
+			<div class="field"><label for="end">End</label><input type="time" id="end" name="end" value="11:00" required></div>
+			<div class="field" style="flex:0"><button class="btn" type="submit">Add time</button></div>
+		</div>
+		<p class="small muted">Between 30 minutes and 3 hours, inside gym hours: Mon/Wed/Thu 05:00-22:00, Tue/Fri 05:00-10:00 and 12:30-22:00, Sat 10:00-16:00, closed Sunday.</p>
+	</form>
+</section>
+
+<section class="card" aria-labelledby="slots-title">
+	<h2 id="slots-title">My available times</h2>
+	{% if schedule.slots %}
+	<div class="table-wrap"><table>
+		<thead><tr><th>Time</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+		<tbody>
+		{% for s in schedule.slots %}
+			<tr><td>{{ s.label }}-{{ s.endLabel }}</td>
+				<td>{% if s.status == 'Booked' %}<span class="tag good">Booked by {{ s.bookedBy }}</span>{% elif s.status == 'Free' %}<span class="tag">Free</span>{% else %}<span class="tag warn">{{ s.status }}</span>{% endif %}</td>
+				<td class="actions">{% if s.canChange %}
+					<a class="btn small secondary" href="{{ url_for('availability.editSlot', slotId=s.slotId) }}">Edit</a>
+					<form class="inline" method="post" action="{{ url_for('availability.removeSlot', slotId=s.slotId) }}"><button class="btn small danger" type="submit">Remove</button></form>
+				{% else %}<span class="small muted">Has a booking</span>{% endif %}</td></tr>
+		{% endfor %}
+		</tbody>
+	</table></div>
+	{% else %}
+	<div class="empty">You haven't added any available times. Students can only book times you add.</div>
+	{% endif %}
+</section>
+{% endblock %}

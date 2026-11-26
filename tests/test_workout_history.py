@@ -14,7 +14,7 @@ class WorkoutHistoryTests(unittest.TestCase):
     def setUp(self):
         directory = self.enterContext(TemporaryDirectory())
         self.storage_path = Path(directory) / "workouts.json"
-        self.config = {"TESTING": True, "WORKOUT_STORAGE_PATH": self.storage_path}
+        self.config = {"TESTING": True, "PROGRESS_FIXTURES": True, "WORKOUT_STORAGE_PATH": self.storage_path}
         self.app = create_app(self.config)
         self.client = self.app.test_client()
         self.repository = WorkoutLogRepository(self.storage_path)

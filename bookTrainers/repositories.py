@@ -75,6 +75,14 @@ class TimeSlotRepository:
     def forTrainer(self, trainerId: str) -> List[TimeSlot]:
         return [TimeSlot.fromDict(r) for r in self.store.read() if r["trainerId"] == trainerId]
 
+    def save(self, slot: TimeSlot) -> None:
+        with self.store.lock:
+            self.store.write([slot.toDict() if r["slotId"] == slot.slotId else r for r in self.store.read()])
+
+    def remove(self, slotId: str) -> None:
+        with self.store.lock:
+            self.store.write([r for r in self.store.read() if r["slotId"] != slotId])
+
 
 class BookingRepository:
     def __init__(self, dataDir: str):

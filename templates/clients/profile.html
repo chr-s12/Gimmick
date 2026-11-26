@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ client.name }}</h1>
+	<p>{% if client.workoutSharing %}<span class="tag good">Sharing workouts</span>{% else %}<span class="tag">Not sharing workouts</span>{% endif %}</p></div>
+	<a class="btn secondary" href="{{ url_for('clients.clientList') }}">All clients</a></div>
+
+<div class="grid grid-2">
+<section class="card" aria-labelledby="up-title">
+	<h2 id="up-title">Upcoming sessions with you</h2>
+	<ul class="list">
+	{% for s in client.upcomingSessions %}
+		<li><span class="grow">{{ s.start|when }}</span>{% if s.inProgress %}<span class="tag accent">In progress</span>{% endif %}</li>
+	{% endfor %}
+	</ul>
+</section>
+
+<section class="card" aria-labelledby="assign-title">
+	<h2 id="assign-title">Assign a routine</h2>
+	{% if not client.workoutSharing %}
+		<div class="callout">{{ client.name }} must enable workout sharing before routines can be assigned.</div>
+	{% else %}
+	<form method="post" action="{{ url_for('clients.assign', clientId=client.uwiId) }}">
+		{% if myRoutines %}
+		<div class="field">
+			<label for="fromRoutine">Copy one of your routines</label>
+			<select id="fromRoutine" name="fromRoutine">
+				<option value="">No, I'll build one below</option>
+				{% for r in myRoutines %}<option value="{{ r.routineId }}">{{ r.name }} ({{ r.exercises|length }} exercises)</option>{% endfor %}
+			</select>
+		</div>
+		{% endif %}
+		<details {% if not myRoutines %}open{% endif %}>
+			<summary>Build a new routine for {{ client.name }}</summary>
+			<div class="field" style="margin-top:10px"><label for="routine_name">Routine name</label><input type="text" id="routine_name" name="routine_name" maxlength="60"></div>
+			{% set rows = [{'name':'','sets':'','reps':'','rest':'','weight':''}] * 3 %}
+			{% include "routines/_rows.html" %}
+		</details>
+		<p></p>
+		<button class="btn" type="submit">Assign routine</button>
+	</form>
+	{% endif %}
+</section>
+</div>
+
+<section class="card" aria-labelledby="wk-title">
+	<h2 id="wk-title">Completed workouts</h2>
+	{% if client.workouts %}
+		{% for w in client.workouts %}
+		<details {% if loop.first %}open{% endif %} style="padding:8px 0;border-top:1px solid var(--line)">
+			<summary><strong>{{ w.routineName }}</strong> <span class="muted small">{{ w.completedAt|when }}</span></summary>
+			<div class="table-wrap"><table>
+				<thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight (kg)</th></tr></thead>
+				<tbody>{% for e in w.exercises %}<tr><td>{{ e.name }}</td><td>{{ e.sets }}</td><td>{{ e.reps }}</td><td>{{ '%g'|format(e.weightKg) }}</td></tr>{% endfor %}</tbody>
+			</table></div>
+		</details>
+		{% endfor %}
+	{% else %}
+		<div class="{{ 'callout' if not client.workoutSharing else 'empty' }}">{{ client.workoutMessage }}</div>
+	{% endif %}
+</section>
+
+{% if client.assignedRoutines %}
+<section class="card" aria-labelledby="as-title">
+	<h2 id="as-title">Routines you assigned</h2>
+	<ul class="list">
+	{% for r in client.assignedRoutines %}
+		<li><span class="grow"><strong>{{ r.routineName }}</strong> <span class="small muted">{{ r.assignedAt|when }}</span><br>
+			<span class="small muted">{{ r.exercises|map(attribute='excerName')|join(', ') }}</span></span></li>
+	{% endfor %}
+	</ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Delete routine{% endblock %}
+{% block content %}
+<div class="card">
+	<h1>Delete {{ routine.name }}?</h1>
+	<p>This removes the routine and its {{ routine.exercises|length }} exercise{{ 's' if routine.exercises|length != 1 }} from your profile. Workouts you already logged are kept.</p>
+	<form method="post" class="actions">
+		<button class="btn" type="submit">Yes, delete it</button>
+		<a class="btn secondary" href="{{ url_for('routines.myRoutines') }}">No, keep it</a>
+	</form>
+</div>
+{% endblock %}

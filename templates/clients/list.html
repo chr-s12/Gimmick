@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}My clients{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My clients</h1><p>Students with at least one upcoming session with you. A client in a session right now is listed first.</p></div></div>
+{% if clients %}
+<div class="card">
+	<ul class="list">
+	{% for c in clients %}
+		<li class="{{ 'highlight' if c.inSessionNow }}"><span class="grow"><strong>{{ c.name }}</strong>
+			{% if c.inSessionNow %}<span class="tag accent">In session now</span>{% endif %}<br>
+			<span class="small muted">Next session {{ c.nextSession|when }} &middot; {{ c.upcomingSessions }} upcoming &middot;
+			{% if c.workoutSharing %}sharing workouts{% else %}not sharing workouts{% endif %}</span></span>
+			<a class="btn small" href="{{ url_for('clients.profile', clientId=c.uwiId) }}">Open profile</a></li>
+	{% endfor %}
+	</ul>
+</div>
+{% else %}
+<div class="empty">{{ message }}</div>
+{% endif %}
+{% endblock %}

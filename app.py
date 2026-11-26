@@ -1,189 +1,217 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify,flash, session  
+"""Gymmick - UWI Gym Routine Planner/Tracker.
+
+Run the prototype (SRS 1.4.1):
+    python seedData.py --reset     # demo accounts and data (first time only)
+    python app.py                  # then open http://127.0.0.1:5000
+
+Every page goes through the same path (SDS 2.3.1): a Blueprint in controllers/
+checks the login and role, then calls one service, which reads and writes the
+JSON files in DATA_DIR through its repositories.
+"""
+import logging
+import os
+import secrets
+from datetime import datetime, timedelta
+from pathlib import Path
+
+from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+
+from accounts import ROLE_LABELS, buildAccountService
+from bookTrainers import buildBookingService
+from controllers.auth import auth
+from controllers.availability import availability
+from controllers.booking import booking
+from controllers.clients import clients
+from controllers.home import home
+from controllers.occupancy import occupancy
+from controllers.reports import reports
+from controllers.routines import routines
+from manageAvailability import buildAvailabilityService
+from occupancyTrends import buildServices
+from occupancyTrends.repositories import NotificationRepository
 from progress.repository import WorkoutLogRepository
 from progress.routes import progress_bp
 from progress.service import ProgressService
-from Student import Student
-from Routine import Routine
-from Exercise import Exercise
-import os
-from trainer import Trainer
+from routineBuilder import buildRoutineService
+from viewClientele import buildClienteleService
+
+BASE_DIR = Path(__file__).resolve().parent
+SESSION_TIMEOUT = timedelta(minutes=15)   # SRS 3.2.2: log out after 15 minutes of inactivity
+OPEN_ENDPOINTS = {"auth.login", "auth.signup", "static"}
+BLUEPRINT_ROLES = {   # checked on every request (SRS 3.2.2); the services check again
+    "routines": ("student", "trainer"), "progress": ("student",), "booking": ("student",),
+    "availability": ("trainer",), "clients": ("trainer",), "reports": ("operator",),
+}
+NAVIGATION = {
+    "student": [("home.index", "Home"), ("routines.myRoutines", "My routines"), ("progress.dashboard", "Log workout"),
+                ("progress.analytics_dashboard", "My progress"), ("booking.trainers", "Book a trainer"),
+                ("booking.sessions", "My sessions"), ("occupancy.member", "Gym occupancy"),
+                ("home.settings", "Settings")],
+    "trainer": [("availability.schedule", "My schedule"), ("clients.clientList", "My clients"),
+                ("routines.myRoutines", "Routines"), ("home.settings", "Trainer profile")],
+    "staff": [("occupancy.desk", "Front desk"), ("home.resetPassword", "Reset a password")],
+    "operator": [("reports.report", "Usage reports"), ("home.backup", "Download backup")],
+}
 
 
-# Load or initialize a default Student user for testing
-def get_current_user(user_id: str = "620150001") -> Student:
-    user = Student.loadUser(user_id)
-    if user is None:
-        user = Student("Khairy", user_id)
-        user.userSave()
-    return user
+NAV_PARENT = {"booking.trainer": "booking.trainers", "booking.change": "booking.sessions",
+              "booking.cancel": "booking.sessions", "progress.log_workout": "progress.dashboard",
+              "progress.workout_summary": "progress.dashboard", "progress.workout_history": "progress.dashboard"}
 
-def get_current_trainer(trainer_id: str = "T001") -> Trainer:
-    active_id = session.get("trainer_id", trainer_id)
-    trainer = Trainer.loadUser(active_id)
-    if trainer is None:
-        trainer = Trainer("Coach Devon", active_id)
-        trainer.userSave()
-    return trainer
+
+def _activeNav(endpoint: str, endpoints: list):
+    """The one sidebar link to highlight for this page."""
+    if endpoint in endpoints:
+        return endpoint
+    if endpoint in NAV_PARENT:
+        return NAV_PARENT[endpoint]
+    sameArea = [e for e in endpoints if e.split(".")[0] == endpoint.split(".")[0]]
+    return sameArea[0] if len(sameArea) == 1 else None
+
+
+class ProgressAccounts:
+    """Gives Track Progress (progress/) the logged-in student and their real routines."""
+
+    def __init__(self, accounts, routineService):
+        self.accounts, self.routines = accounts, routineService
+
+    def current_student_id(self):
+        return g.user["uwiId"]
+
+    def get_student(self, student_id):
+        user = self.accounts.get(student_id)
+        return {"student_id": student_id, "username": user["name"], "role": user["role"]} if user else None
+
+    def get_student_routines(self, student_id):
+        return self.routines.progressRoutines(student_id)
+
+    def get_student_routine(self, student_id, routine_id):
+        return self.routines.progressRoutine(student_id, routine_id)
+
+
+def _setUpErrorLog(logDir: str) -> None:
+    """System errors and failed logins go to a local text file (SRS 4.3)."""
+    os.makedirs(logDir, exist_ok=True)
+    path = os.path.abspath(os.path.join(logDir, "gymmick.log"))
+    logger = logging.getLogger("gymmick")
+    if not any(getattr(h, "baseFilename", None) == path for h in logger.handlers):
+        handler = logging.FileHandler(path, encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 
 def create_app(config=None):
     app = Flask(__name__)
-    app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-gimmick")
+    app.config.update(
+        SECRET_KEY=os.environ.get("SECRET_KEY") or secrets.token_hex(32),
+        DATA_DIR=str(BASE_DIR / "data"),
+        LOG_DIR=str(BASE_DIR / "logs"),
+        CLOCK=datetime.now,
+        ENFORCE_GYM_HOURS=os.environ.get("GYMMICK_IGNORE_HOURS") != "1",
+        PERMANENT_SESSION_LIFETIME=SESSION_TIMEOUT,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        PROGRESS_FIXTURES=False,   # True runs Track Progress on its demo fixtures (used by its own tests)
+    )
     if config is not None:
         app.config.update(config)
+    dataDir, clock = str(app.config["DATA_DIR"]), app.config["CLOCK"]
+    _setUpErrorLog(str(app.config["LOG_DIR"]))
 
-    # Initialize Progress tracking extension & blueprint
-    storage_path = app.config.get("WORKOUT_STORAGE_PATH")
-    repository = (
-        WorkoutLogRepository() if storage_path is None else WorkoutLogRepository(storage_path)
-    )
-    app.extensions["progress_service"] = ProgressService(repository)
+    # ---- services (Business Logic Layer) ----------------------------------------------------------
+    accounts = buildAccountService(dataDir, clock)
+    occupancyServices = buildServices(dataDir, clock=clock, enforceGymHours=app.config["ENFORCE_GYM_HOURS"])
+    routineService = buildRoutineService(dataDir)
+    app.extensions["gymmick"] = {
+        "accounts": accounts, "routines": routineService,
+        "booking": buildBookingService(dataDir, clock), "availability": buildAvailabilityService(dataDir, clock),
+        "clientele": buildClienteleService(dataDir, clock),
+        "occupancy": occupancyServices["occupancy"], "reports": occupancyServices["reports"],
+        "notifications": NotificationRepository(dataDir), "clock": clock,
+    }
+
+    # Track Progress (Feature 4) keeps its own service and Blueprint
+    storagePath = app.config.get("WORKOUT_STORAGE_PATH") or os.path.join(dataDir, "workoutLogs.json")
+    app.extensions["progress_service"] = ProgressService(WorkoutLogRepository(storagePath))
+    if not app.config["PROGRESS_FIXTURES"]:
+        app.extensions["progress_dependencies"] = ProgressAccounts(accounts, routineService)
+
+    for blueprint in (auth, home, routines, availability, booking, clients, occupancy, reports):
+        app.register_blueprint(blueprint)
     app.register_blueprint(progress_bp, url_prefix="/progress")
 
-    # Dashboard & Routine Routes
-    @app.route("/")
-    def index():
-        user = get_current_user()
-        public_routines = Routine.getPublicRoutines()
-        return render_template(
-            "member_dash.html",
-            user=user,
-            my_routines=user._routine_list,
-            public_routines=public_routines,
-            common_exercises=Exercise.getCommonExercises(),
-        )
+    # ---- every request: login, inactivity timeout, role, reminders ---------------------------------
+    @app.before_request
+    def checkLogin():
+        g.user = None
+        endpoint = request.endpoint or ""
+        if endpoint in OPEN_ENDPOINTS or endpoint.endswith(".static"):
+            return None
+        if app.config["PROGRESS_FIXTURES"] and request.blueprint == "progress":
+            return None
+        uwiId = session.get("uwiId")
+        if not uwiId:
+            nextPage = request.full_path if request.method == "GET" and request.path != "/" else ""
+            return redirect(url_for("auth.login", next=nextPage.rstrip("?") or None))
+        now = clock().timestamp()
+        if now - session.get("lastSeen", now) > SESSION_TIMEOUT.total_seconds():
+            session.clear()
+            flash("You were logged out after 15 minutes without activity. Please log in again.", "info")
+            return redirect(url_for("auth.login"))
+        user = accounts.get(uwiId)
+        if user is None:
+            session.clear()
+            return redirect(url_for("auth.login"))
+        g.user = user
+        if not endpoint.endswith("Status"):   # the pages' 5-second refreshes aren't user activity
+            session["lastSeen"] = now
+        allowed = BLUEPRINT_ROLES.get(request.blueprint)
+        if allowed and user["role"] not in allowed:
+            abort(403)
+        try:   # session reminders are due an hour before (AC-02.5, AC-05.4)
+            app.extensions["gymmick"]["booking"].sendDueReminders()
+            app.extensions["gymmick"]["availability"].sendDueReminders()
+        except Exception:
+            logging.getLogger("gymmick").exception("Could not send session reminders")
+        return None
 
-    @app.route("/create-routine", methods=["POST"])
-    def create_routine():
-        user = get_current_user()
-        routine_name = (request.form.get("routine_name") or "").strip()
-        is_public = request.form.get("is_public") == "on"
+    @app.context_processor
+    def layout():
+        user = g.get("user")
+        if not user:
+            return {"currentUser": None}
+        unread = sum(not n.get("read") for n in app.extensions["gymmick"]["notifications"].listForUser(user["uwiId"]))
+        navigation = NAVIGATION.get(user["role"], [])
+        return {"currentUser": user, "roleLabel": ROLE_LABELS.get(user["role"], user["role"]),
+                "navigation": navigation, "unreadCount": unread,
+                "activeNav": _activeNav(request.endpoint or "", [e for e, _ in navigation])}
 
-        if not routine_name:
-            flash("Routine name cannot be empty.", "error")
-            return redirect(url_for("index"))
+    @app.template_filter("when")
+    def when(value):
+        if isinstance(value, str):
+            value = datetime.fromisoformat(value)
+        return value.strftime("%a %d %b %Y, %H:%M")
 
-        names = request.form.getlist("excer_name")
-        sets = request.form.getlist("num_sets")
-        reps = request.form.getlist("num_reps")
-        rests = request.form.getlist("rest_time")
-        weights = request.form.getlist("weight_kg")
+    @app.errorhandler(403)
+    def forbidden(_):
+        return render_template("error.html", title="Not allowed",
+                               message="Your account doesn't have access to this page."), 403
 
-        exercises = []
-        for i in range(len(names)):
-            excer_name = names[i].strip()
-            if not excer_name:
-                continue  # Skip blank rows
+    @app.errorhandler(404)
+    def notFound(_):
+        return render_template("error.html", title="Page not found",
+                               message="That page doesn't exist."), 404
 
-            try:
-                num_sets = int(sets[i])
-                num_reps = int(reps[i])
-                rest_time = int(rests[i] or 0)
-                weight_kg = float(weights[i] or 0)
-            except (ValueError, IndexError):
-                flash(f"Invalid numeric values for exercise '{excer_name}'.", "error")
-                return redirect(url_for("index"))
+    @app.errorhandler(500)
+    def serverError(error):
+        logging.getLogger("gymmick").error("Server error on %s", request.path,
+                                           exc_info=getattr(error, "original_exception", None))
+        return render_template("error.html", title="Something went wrong",
+                               message="The error has been logged. Please try again."), 500
 
-            if num_sets <= 0 or num_reps <= 0 or rest_time < 0 or weight_kg < 0:
-                flash(f"Sets and reps must be positive, and rest/weight cannot be negative for '{excer_name}'.", "error")
-                return redirect(url_for("index"))
-
-            exercises.append(Exercise(
-                excer_name=excer_name,
-                num_sets=num_sets,
-                num_reps=num_reps,
-                rest_time=rest_time,
-                weight_kg=weight_kg
-            ))
-
-        if not exercises:
-            flash("Add at least one valid exercise to create a routine.", "error")
-            return redirect(url_for("index"))
-
-        user.buildRoutine(routine_name, exercises, is_public)
-        return redirect(url_for("index"))
-
-    @app.route("/edit-routine/<routine_id>", methods=["GET", "POST"])
-    def edit_routine(routine_id):
-        user = get_current_user()
-        routine = user.getRoutineById(routine_id)
-
-        if routine is None:
-            return "Routine not Found", 404
-
-        if request.method == "POST":
-            new_name = (request.form.get("routine_name") or "").strip()
-            new_public = request.form.get("is_public") == "on"
-
-            if not new_name:
-                flash("Routine name cannot be empty.", "error")
-                return render_template("edit_routine.html", routine=routine)
-
-            user.editRoutine(routine, routineName=new_name, isPublic=new_public)
-            return redirect(url_for("index"))
-
-        return render_template("edit_routine.html", routine=routine)
-
-    @app.route("/delete-routine/<routine_id>", methods=["POST"])
-    def delete_routine(routine_id):
-        user = get_current_user()
-        routine = user.getRoutineById(routine_id)
-        if routine:
-            user.deleteRoutine(routine)
-        return redirect(url_for("index"))
-
-    @app.route("/adopt-routine/<routine_id>", methods=["POST"])
-    def adopt_routine(routine_id):
-        user = get_current_user()
-        public_routines = Routine.getPublicRoutines()
-        routine = next(
-            (r for r in public_routines if str(r.getRoutineId()) == str(routine_id)),
-            None
-        )
-        if routine:
-            user.adoptRoutine(routine)
-        return redirect(url_for("index"))
-
-    @app.route("/assign-routine", methods=["POST"])
-    def assign_routine():
-        trainer = get_current_trainer()  # Replace with your active Trainer loader
-        student_id = (request.form.get("student_id") or "").strip()
-        routine_id = (request.form.get("routine_id") or "").strip()
-
-        if not student_id or not routine_id:
-            flash("Please select both a student and a routine.", "error")
-            return redirect(url_for("trainer_dash"))
-
-        stu = Student.loadUser(student_id)
-        if stu is None:
-            flash(f"Student '{student_id}' could not be found.", "error")
-            return redirect(url_for("trainer_dash"))
-
-        routine = trainer.getRoutineById(routine_id)
-        if routine is None:
-            flash("Selected routine could not be found.", "error")
-            return redirect(url_for("trainer_dash"))
-
-        if not any(str(c.getIdNum()) == str(stu.getIdNum()) for c in trainer._client_list):
-            flash(f"{stu.getUsername()} is not on your client list.", "error")
-            return redirect(url_for("trainer_dash"))
-
-        if any(str(r.getRoutineId()) == str(routine.getRoutineId()) for r in stu._routine_list):
-            flash(f"{stu.getUsername()} already has '{routine.getRoutineName()}'.", "error")
-            return redirect(url_for("trainer_dash"))
-
-        if trainer.assignRoutine(routine, stu):
-            flash(f"Assigned '{routine.getRoutineName()}' to {stu.getUsername()}!", "success")
-        else:
-            flash("Could not assign routine due to an unexpected error.", "error")
-
-        return redirect(url_for("trainer_dash"))
     return app
 
-    
-
-
-app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    create_app().run(debug=os.environ.get("FLASK_DEBUG") == "1")

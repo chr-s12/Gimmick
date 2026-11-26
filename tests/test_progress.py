@@ -34,7 +34,7 @@ class ProgressTests(unittest.TestCase):
     def setUp(self):
         directory = self.enterContext(TemporaryDirectory())
         self.storage_path = Path(directory) / "workouts.json"
-        self.config = {"TESTING": True, "WORKOUT_STORAGE_PATH": self.storage_path}
+        self.config = {"TESTING": True, "PROGRESS_FIXTURES": True, "WORKOUT_STORAGE_PATH": self.storage_path}
         self.app = create_app(self.config)
         self.client = self.app.test_client()
         self.repository = WorkoutLogRepository(self.storage_path)
@@ -56,8 +56,11 @@ class ProgressTests(unittest.TestCase):
         self.assertIn(b"Full Body", response.data)
         self.assertNotIn(b"Lower Body", response.data)
 
-    def test_root_has_no_route(self):
-        self.assertEqual(self.client.get("/").status_code, 404)
+    def test_root_is_the_app_home_and_needs_login(self):
+        # The whole app now shares this server; its home page sends visitors to log in first.
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.location.startswith("/login"))
 
     def test_selecting_saved_routine_prefills_form(self):
         response = self.client.get(self.url)

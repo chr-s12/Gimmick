@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Routines{% endblock %}
+{% block content %}
+<div class="page-head">
+	<div><h1>{{ 'My routines' if currentUser.role == 'student' else 'Routines' }}</h1>
+		<p>{{ 'Build your own or adopt a ready-made template.' if currentUser.role == 'student' else 'Build routines to assign to clients, or publish them as templates for students.' }}</p></div>
+	<div class="actions">
+		<a class="btn" href="{{ url_for('routines.create') }}">New routine</a>
+		<a class="btn secondary" href="{{ url_for('routines.templates') }}">Browse templates</a>
+	</div>
+</div>
+
+{% if trainerAdded %}
+<section class="card">
+	<h2>From your trainer</h2>
+	<ul class="list">
+	{% for r in trainerAdded %}
+		<li><div class="grow"><strong>{{ r.name }}</strong> <span class="tag info">Trainer-added</span>
+			<div class="small muted">Added by your trainer {{ r.addedByName }} on {{ r.assignedAt|when }}</div>
+			<ul class="routine-exercises small">{% for e in r.exercises %}<li>{{ e.name }}: {{ e.sets }} &times; {{ e.reps }}{% if e.weight %} @ {{ '%g'|format(e.weight) }} kg{% endif %}</li>{% endfor %}</ul></div>
+			{% if currentUser.role == 'student' %}<a class="btn small secondary" href="{{ url_for('progress.log_workout', routine_id=r.routineId) }}">Log workout</a>{% endif %}</li>
+	{% endfor %}
+	</ul>
+</section>
+{% endif %}
+
+{% if routines %}
+<section class="card">
+	{% if trainerAdded %}<h2>Your own</h2>{% endif %}
+	<ul class="list">
+	{% for r in routines %}
+		<li><div class="grow"><strong>{{ r.name }}</strong>{% if r.isPublic %} <span class="tag good">Published template</span>{% endif %}
+			<ul class="routine-exercises small">{% for e in r.exercises %}<li>{{ e.name }}: {{ e.sets }} &times; {{ e.reps }}{% if e.weight %} @ {{ '%g'|format(e.weight) }} kg{% endif %}{% if e.rest %}, rest {{ e.rest }}s{% endif %}</li>{% endfor %}</ul></div>
+			<div class="actions">
+				{% if currentUser.role == 'student' %}<a class="btn small" href="{{ url_for('progress.log_workout', routine_id=r.routineId) }}">Log workout</a>{% endif %}
+				<a class="btn small secondary" href="{{ url_for('routines.edit', routineId=r.routineId) }}">Edit</a>
+				<a class="btn small danger" href="{{ url_for('routines.delete', routineId=r.routineId) }}">Delete</a>
+			</div></li>
+	{% endfor %}
+	</ul>
+</section>
+{% elif not trainerAdded %}
+<div class="empty">No routines yet. <a href="{{ url_for('routines.create') }}">Build your first routine</a> or <a href="{{ url_for('routines.templates') }}">adopt a template</a>.</div>
+{% endif %}
+{% endblock %}

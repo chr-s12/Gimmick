@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Book a trainer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Personal trainers</h1><p>Choose a trainer to see their specialities and free times.</p></div></div>
+{% if trainers %}
+<div class="grid grid-2">
+{% for t in trainers %}
+	<section class="card">
+		<h2>{{ t.name }}</h2>
+		<p>{% for s in t.specialisations %}<span class="tag info">{{ s }}</span> {% else %}<span class="muted small">No specialities listed</span>{% endfor %}</p>
+		<p class="small muted">{% if t.freeCount %}{{ t.freeCount }} free time{{ 's' if t.freeCount != 1 }}, next {{ t.nextFree }}{% else %}No free times right now{% endif %}</p>
+		<a class="btn small" href="{{ url_for('booking.trainer', trainerId=t.uwiId) }}">View profile</a>
+	</section>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty">No personal trainers are registered yet.</div>
+{% endif %}
+{% endblock %}

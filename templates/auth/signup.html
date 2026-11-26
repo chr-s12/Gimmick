@@ -1,0 +1,46 @@
+{% extends "authBase.html" %}
+{% block title %}Sign up{% endblock %}
+{% block heading %}Member Sign Up{% endblock %}
+{% block content %}
+<form method="post" action="{{ url_for('auth.signup') }}" novalidate>
+	<div class="fields-box">
+		<div class="field">
+			<label for="name">Name</label>
+			<input type="text" id="name" name="name" autocomplete="name" value="{{ form.get('name', '') }}" required>
+		</div>
+		<div class="field">
+			<label for="uwiId">UWI ID number</label>
+			<input type="text" id="uwiId" name="uwiId" inputmode="numeric" autocomplete="username" value="{{ form.get('uwiId', '') }}" required>
+		</div>
+		<fieldset>
+			<legend>Role</legend>
+			<label class="check"><input type="radio" name="role" value="student" {% if form.get('role', 'student') == 'student' %}checked{% endif %}> Gym goer (student)</label>
+			<label class="check"><input type="radio" name="role" value="trainer" {% if form.get('role') == 'trainer' %}checked{% endif %}> Personal trainer</label>
+		</fieldset>
+		<div class="field trainer-only">
+			<label for="specialisations">Specialities <span class="muted small">(trainers, separated by commas)</span></label>
+			<input type="text" id="specialisations" name="specialisations" placeholder="Strength, Mobility" value="{{ form.get('specialisations', '') }}">
+		</div>
+		<div class="field">
+			<label for="password">Password</label>
+			<input type="password" id="password" name="password" autocomplete="new-password" aria-describedby="pw-help" required>
+			<p class="small muted" id="pw-help">At least 8 characters, with a letter and a number.</p>
+		</div>
+		<div class="field">
+			<label for="confirm">Confirm password</label>
+			<input type="password" id="confirm" name="confirm" autocomplete="new-password" required>
+		</div>
+	</div>
+	<button class="btn" type="submit">Sign up</button>
+</form>
+<p class="small" style="margin-top:16px">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+{% endblock %}
+{% block scripts %}
+<script>
+	// Show the specialities box only for trainers (works without JavaScript too: the box just stays visible)
+	const box = document.querySelector('.trainer-only');
+	const sync = () => { box.hidden = document.querySelector('input[name=role]:checked').value !== 'trainer'; };
+	document.querySelectorAll('input[name=role]').forEach(r => r.addEventListener('change', sync));
+	sync();
+</script>
+{% endblock %}

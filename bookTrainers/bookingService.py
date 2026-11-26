@@ -108,13 +108,15 @@ class BookingService:
         self._student(studentId)
         trainer = self._trainer(trainerId)
         now, allBookings = self.clock(), self.bookings.listAll()
-        free = sorted((s for s in self.slots.forTrainer(trainerId) if self._isFree(s, now, allBookings)),
-                      key=lambda s: s.start)
+        upcoming = sorted((s for s in self.slots.forTrainer(trainerId)
+                           if s.start > now and withinOpeningHours(s.start, s.end)), key=lambda s: s.start)
+        view = lambda s: {"slotId": s.slotId, "start": s.start, "end": s.end, "label": describeTime(s.start),
+                          "endLabel": s.end.strftime("%H:%M")}
         return {"uwiId": trainer["uwiId"], "name": trainer["name"],
                 "specialisations": trainer.get("specialisations", []),
                 "bio": trainer.get("bio", ""),
-                "availableSlots": [{"slotId": s.slotId, "start": s.start, "end": s.end,
-                                    "label": describeTime(s.start)} for s in free]}
+                "availableSlots": [view(s) for s in upcoming if self._isFree(s, now, allBookings)],
+                "takenSlots": [view(s) for s in upcoming if not self._isFree(s, now, allBookings)]}
 
     # ---- AC-05.1 / scenarios 2 and 3: ask for a session ----------------------------------------
 
@@ -239,6 +241,15 @@ class BookingService:
                 old = next(b for b in allBookings if b.bookingId == booking.replacesBookingId)
                 old.status = BookingStatus.CANCELLED
                 changed.append(old)
+            # Feature 2: other requests for the same time are declined automatically
+            for other in allBookings:
+                if (other.trainerId == trainerId and other.status == BookingStatus.PENDING
+                        and other.bookingId != booking.bookingId and slot.overlaps(other.start, other.end)):
+                    other.status = BookingStatus.DECLINED
+                    changed.append(other)
+                    self.notifications.add(other.studentId, f"{trainer['name']} declined your request for "
+                                                            f"{describeTime(other.start)}: the time was booked "
+                                                            f"by someone else.", now)
             message = f"{trainer['name']} confirmed your session on {when}."
         else:
             booking.status = BookingStatus.DECLINED

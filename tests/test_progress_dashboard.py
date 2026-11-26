@@ -20,7 +20,7 @@ class ProgressDashboardTests(unittest.TestCase):
     def setUp(self):
         directory = self.enterContext(TemporaryDirectory())
         self.storage_path = Path(directory) / "workouts.json"
-        self.app = create_app({"TESTING": True, "WORKOUT_STORAGE_PATH": self.storage_path})
+        self.app = create_app({"TESTING": True, "PROGRESS_FIXTURES": True, "WORKOUT_STORAGE_PATH": self.storage_path})
         self.client = self.app.test_client()
         self.repository = WorkoutLogRepository(self.storage_path)
         self.reference = datetime.fromisoformat("2026-11-26T03:00:00+00:00")

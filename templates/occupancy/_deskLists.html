@@ -1,0 +1,27 @@
+<div class="grid grid-2">
+	<section class="card" aria-labelledby="queue-title">
+		<h2 id="queue-title">Queue</h2>
+		<ul class="list" id="queue-body">
+		{% for q in status.queue %}
+			<li class="{{ 'highlight' if q.called }}"><span class="grow"><strong>{{ q.position }}. {{ q.name }}</strong> <span class="muted small">{{ q.uwiId }}</span><br>
+				{% if q.called %}<span class="tag good">Called: {{ q.callSecondsLeft }}s left to check in</span>{% else %}<span class="small muted">About {{ q.etaMinutes }} min</span>{% endif %}</span>
+				<form class="inline" method="post" action="{{ url_for('occupancy.removeFromQueue', entryId=q.entryId) }}"><button class="btn small danger" type="submit">Remove</button></form></li>
+		{% else %}
+			<li class="muted">Nobody is waiting.</li>
+		{% endfor %}
+		</ul>
+	</section>
+	<section class="card" aria-labelledby="inside-title">
+		<h2 id="inside-title">Checked in</h2>
+		<ul class="list" id="inside-body">
+		{% set timeUp = status.askedToLeave|map(attribute='uwiId')|list %}
+		{% for p in status.inside %}
+			<li><span class="grow"><strong>{{ p.name }}</strong> <span class="muted small">{{ p.uwiId }} &middot; since {{ p.since }} ({{ p.minutesInside }} min)</span>
+				{% if p.uwiId in timeUp %}<span class="tag accent">Time up</span>{% endif %}</span>
+				<form class="inline" method="post" action="{{ url_for('occupancy.checkOut') }}"><input type="hidden" name="uwiId" value="{{ p.uwiId }}"><button class="btn small secondary" type="submit">Check out</button></form></li>
+		{% else %}
+			<li class="muted">Nobody is checked in.</li>
+		{% endfor %}
+		</ul>
+	</section>
+</div>

@@ -1,0 +1,33 @@
+{# Exercise rows for the routine builder. Needs: rows, common #}
+<datalist id="common-exercises">{% for name in common %}<option value="{{ name }}">{% endfor %}</datalist>
+<div class="table-wrap">
+<table class="exercise-rows">
+	<thead><tr><th scope="col">Exercise</th><th scope="col">Sets</th><th scope="col">Reps</th><th scope="col">Rest (sec)</th><th scope="col">Weight (kg)</th></tr></thead>
+	<tbody data-rows>
+	{% for row in rows %}
+		<tr>
+			<td><input type="text" name="excer_name" list="common-exercises" value="{{ row.name }}" aria-label="Exercise {{ loop.index }} name" maxlength="60"></td>
+			<td><input type="number" name="num_sets" min="1" step="1" value="{{ row.sets }}" aria-label="Exercise {{ loop.index }} sets"></td>
+			<td><input type="number" name="num_reps" min="1" step="1" value="{{ row.reps }}" aria-label="Exercise {{ loop.index }} reps"></td>
+			<td><input type="number" name="rest_time" min="0" step="1" value="{{ row.rest }}" aria-label="Exercise {{ loop.index }} rest in seconds"></td>
+			<td><input type="number" name="weight_kg" min="0" step="0.5" value="{{ row.weight }}" aria-label="Exercise {{ loop.index }} weight in kg"></td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>
+</div>
+<p class="small muted">Pick a common exercise or type your own. Empty rows are ignored; clear a row to remove that exercise.</p>
+<button class="btn secondary small" type="button" data-add-row>+ Add exercise</button>
+<script>
+	document.querySelectorAll('[data-add-row]').forEach(button => button.addEventListener('click', () => {
+		const body = button.closest('form').querySelector('[data-rows]');
+		const row = body.rows[body.rows.length - 1].cloneNode(true);
+		const n = body.rows.length + 1;
+		row.querySelectorAll('input').forEach(input => {
+			input.value = '';
+			input.setAttribute('aria-label', input.getAttribute('aria-label').replace(/\d+/, n));
+		});
+		body.appendChild(row);
+		row.querySelector('input').focus();
+	}));
+</script>

@@ -22,6 +22,7 @@
                     <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} aria-current="page"{% elif request.endpoint in supporting_pages %} aria-current="location"{% endif %}>{{ label }}</a>
                 {% endfor %}
             </nav>
+            <a class="progress-home-link" href="{{ url_for('home.index') }}">&larr; Gymmick home</a>
         </div>
     </header>
 

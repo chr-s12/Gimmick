@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Change session{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Change your session</h1><p>Currently {{ session.label }} with {{ session.trainerName }}.</p></div></div>
+{% if slots %}
+<form class="card" method="post">
+	<fieldset style="border:0;padding:0;margin:0 0 14px">
+		<legend style="font-weight:600;margin-bottom:6px">Pick a new time</legend>
+		{% for s in slots %}
+			<label class="check"><input type="radio" name="slotId" value="{{ s.slotId }}" {% if loop.first %}checked{% endif %}> {{ s.label }}-{{ s.endLabel }}</label>
+		{% endfor %}
+	</fieldset>
+	<p class="small muted">{{ session.trainerName }} has to accept the new time. Until then your current session stays booked.</p>
+	<div class="actions">
+		<button class="btn" type="submit">Send change request</button>
+		<a class="btn secondary" href="{{ url_for('booking.sessions') }}">Back</a>
+	</div>
+</form>
+{% else %}
+<div class="empty">{{ session.trainerName }} has no other free times right now.</div>
+{% endif %}
+{% endblock %}
