@@ -18,6 +18,7 @@ from werkzeug.security import generate_password_hash
 from bookTrainers import buildBookingService
 from bookTrainers.models import TimeSlot
 from bookTrainers.repositories import TimeSlotRepository
+from occupancyTrends import buildServices
 from occupancyTrends.gymHours import OPENING_HOURS
 from occupancyTrends.models import Direction, EntryExitEvent, EntryStatus, Queue, QueueEntry
 from occupancyTrends.repositories import EntryExitRepository, QueueRepository, UserRepository
@@ -101,7 +102,12 @@ def main():
     p.add_argument("--weeks", type=int, default=6)
     p.add_argument("--data-dir", dest="dataDir", default="data")
     p.add_argument("--reset", action="store_true")
+    p.add_argument("--fill-gym", dest="fillGym", type=int, nargs="?", const=19, metavar="N",
+                   help="demo only: check N students in right now (default 19, one short of full)")
     args = p.parse_args()
+    if args.fillGym is not None:
+        if not args.reset:
+            return fillGym(args.dataDir, args.fillGym)
     if args.reset:
         shutil.rmtree(args.dataDir, ignore_errors=True)
     if os.path.exists(os.path.join(args.dataDir, "entryExitEvents.json")):
@@ -134,6 +140,30 @@ def main():
     seedTrainingData(args.dataDir)
     print(f"Demo logins (password {DEMO_PASSWORD}): student {DEMO_STUDENT}, trainer {TRAINERS[0][0]}, "
           f"staff {STAFF_ID}, operator {OPERATOR_ID}")
+    if args.fillGym is not None:
+        fillGym(args.dataDir, args.fillGym)
+
+
+def fillGym(dataDir: str, target: int) -> None:
+    """Demo shortcut: check seeded students in through the front-desk service until `target` people
+    are inside (default 19), so one more check-in fills the gym (20) and the queue can be shown.
+    If the gym starts empty they arrive over the last hour, so wait estimates look realistic.
+    Ignores opening hours, like GYMMICK_IGNORE_HOURS=1."""
+    if not os.path.exists(os.path.join(dataDir, "users.json")):
+        return print("No demo data yet; run python seedData.py --reset --fill-gym")
+    target = max(0, min(target, Queue.MAX_CAPACITY))
+    now = datetime.now().replace(microsecond=0)
+    inside = {p["uwiId"] for p in buildServices(dataDir, enforceGymHours=False)["occupancy"]
+              .getStaffStatus()["inside"]}
+    backdate = not inside
+    candidates = [f"620200{n:03d}" for n in range(101, 121) if f"620200{n:03d}" not in inside]
+    added = 0
+    for uwiId in candidates[:max(0, target - len(inside))]:
+        arrived = now - timedelta(minutes=55 - 2 * added) if backdate else now
+        occupancy = buildServices(dataDir, clock=lambda t=arrived: t, enforceGymHours=False)["occupancy"]
+        occupancy.recordEntry(uwiId, STAFF_ID)
+        added += 1
+    print(f"Checked in {added} demo students. Now inside: {len(inside) + added}/{Queue.MAX_CAPACITY}.")
 
 
 def seedTrainingData(dataDir: str) -> None:

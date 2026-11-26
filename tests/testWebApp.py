@@ -108,6 +108,14 @@ def test_wrongRoleIsToldItIsOutsideTheirScope(site, uwiId, method, url, message)
     assert response.status_code == 403 and message in html and "outside what your account can do" in html
 
 
+def test_timesWithAZoneAreShownInLocalTime(site):
+    app, _, _ = site   # Track Progress saves workouts in UTC; the trainer's client page must show local time
+    utc = datetime.fromisoformat("2026-11-26T10:40:00+00:00")
+    expected = utc.astimezone().strftime("%a %d %b %Y, %H:%M")
+    assert app.jinja_env.filters["when"]("2026-11-26T10:40:00+00:00") == expected
+    assert app.jinja_env.filters["when"]("2026-11-26T05:40:00") == "Thu 26 Nov 2026, 05:40"
+
+
 def test_homeSendsEachRoleToItsMainPage(site):
     app, _, _ = site
     for uwiId, target in ((TRAINER, "/schedule/"), (STAFF, "/desk"), (OPERATOR, "/reports/")):

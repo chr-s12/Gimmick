@@ -193,6 +193,8 @@ def create_app(config=None):
     def when(value):
         if isinstance(value, str):
             value = datetime.fromisoformat(value)
+        if value.tzinfo is not None:   # e.g. Track Progress saves workouts in UTC; show the computer's
+            value = value.astimezone()  # local time, like every other time in the app (the clock)
         return value.strftime("%a %d %b %Y, %H:%M")
 
     @app.errorhandler(403)

@@ -143,5 +143,7 @@ def hourLabel(hour: int) -> str:
 def formatDuration(seconds: Optional[int]) -> str:
     if seconds is None:
         return "No data"
+    if seconds < 60:
+        return "under 1 min"
     hours, minutes = divmod(int(seconds) // 60, 60)
     return f"{hours} h {minutes} min" if hours else f"{minutes} min"
