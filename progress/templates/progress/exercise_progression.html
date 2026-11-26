@@ -2,7 +2,7 @@
 <section class="progress-card" id="exercise-progression" aria-labelledby="exercise-progression-heading">
     <h2 id="exercise-progression-heading">Individual Exercise Progression</h2>
     {% if exercise_options %}
-        <form class="analytics-controls exercise-chart-controls" method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='exercise-progression') }}">
+        <form class="analytics-controls exercise-chart-controls" data-autosubmit method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='exercise-progression') }}">
             {{ selection_fields(selection, ("exercise", "metric")) }}
             <div>
                 <label for="exercise-chart-exercise">Exercise</label>
@@ -58,8 +58,16 @@
         {% if exercise_chart.all_zero %}
             <p>Every recorded value for this metric is zero. Unweighted exercises can still show repetition progress.</p>
         {% endif %}
-        <div class="exercise-chart-scroll" role="region" aria-label="Exercise progression chart, scroll for more dates" tabindex="0">
-            {% include "progress/exercise_chart.svg" %}
+        <div class="chart-frame" style="--axis-width: {{ exercise_chart.axis_left }}px">
+            <svg class="chart-fixed-axis exercise-tick" aria-hidden="true" focusable="false"
+                 width="{{ exercise_chart.axis_left }}" height="{{ exercise_chart.height }}">
+                {% for label, y in exercise_chart.y_ticks %}
+                    <text x="{{ exercise_chart.axis_left - 10 }}" y="{{ y + 5 }}" text-anchor="end">{{ label }}</text>
+                {% endfor %}
+            </svg>
+            <div class="exercise-chart-scroll" role="region" aria-label="Exercise progression chart, scroll for more dates" tabindex="0">
+                {% include "progress/exercise_chart.svg" %}
+            </div>
         </div>
         <details class="exercise-chart-details">
             <summary>View exercise data</summary>

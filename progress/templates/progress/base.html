@@ -1,33 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gymmick | {% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('progress.static', filename='css/feature4.css') }}">
-    {% block page_resources %}{% endblock %}
-</head>
-<body class="gymmick-progress">
-    <a class="skip-link" href="#progress-content">Skip to content</a>
-    <header class="progress-header">
-        <div class="progress-shell header-inner">
-            <a class="progress-brand" href="{{ url_for('progress.dashboard') }}">Gymmick<span aria-hidden="true">.</span></a>
-            <nav class="progress-nav" aria-label="Progress navigation">
-                {% set destinations = (
-                    ('progress.dashboard', 'Log Workout', ('progress.log_workout',)),
-                    ('progress.workout_history', 'History', ('progress.workout_summary',)),
-                    ('progress.analytics_dashboard', 'My Progress', ())
-                ) %}
-                {% for endpoint, label, supporting_pages in destinations %}
-                    <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} aria-current="page"{% elif request.endpoint in supporting_pages %} aria-current="location"{% endif %}>{{ label }}</a>
-                {% endfor %}
-            </nav>
-            <a class="progress-home-link" href="{{ url_for('home.index') }}">&larr; Gymmick home</a>
-        </div>
-    </header>
+{% extends "base.html" if currentUser else "progress/standalone_base.html" %}
 
-    <main class="progress-shell progress-main" id="progress-content" tabindex="-1">
-        {% block content %}{% endblock %}
-    </main>
-</body>
-</html>
+{% block head %}
+    {% if currentUser %}
+        <link rel="stylesheet" href="{{ url_for('progress.static', filename='css/feature4.css') }}">
+    {% endif %}
+    {% block progress_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+    {% if currentUser %}<div class="gymmick-progress progress-integrated">{% endif %}
+        {% block progress_content %}{% endblock %}
+    {% if currentUser %}</div>{% endif %}
+{% endblock %}

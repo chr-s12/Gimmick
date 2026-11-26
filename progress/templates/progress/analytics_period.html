@@ -31,15 +31,15 @@
                 {% endfor %}
             </select>
         </div>
-        <div>
+        <div data-custom-period>
             <label for="period-start">Start date</label>
             <input id="period-start" type="date" name="start_date" value="{{ form_start }}">
         </div>
-        <div>
+        <div data-custom-period>
             <label for="period-end">End date</label>
             <input id="period-end" type="date" name="end_date" value="{{ form_end }}">
         </div>
-        <button class="progress-button" type="submit">Apply period</button>
+        <button class="progress-button" data-custom-period type="submit">Apply dates</button>
         {% if period != "all" or period_error %}
             <a href="{{ url_for('progress.analytics_dashboard', period='all', _anchor='analytics-period', **chart_selection) }}">Reset to All time</a>
         {% endif %}

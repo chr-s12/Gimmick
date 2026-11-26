@@ -6,7 +6,7 @@
     <h2 id="personal-records-heading">All-time Personal Records</h2>
     <p>First-achievement dates use Jamaica time.</p>
     {% if selected_records %}
-        <form class="analytics-controls record-controls" method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='personal-records') }}">
+        <form class="analytics-controls record-controls" data-autosubmit method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='personal-records') }}">
             {{ selection_fields(selection, ("record_exercise", "record_weight")) }}
             <div>
                 <label for="record-exercise">Record exercise</label>
@@ -31,7 +31,7 @@
                 <div class="record-achievement" id="repetition-record">
                     <h3>Repetition Record</h3>
                     {% if selected_records.repetition_records | length > 1 %}
-                        <form class="analytics-controls record-controls" method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='personal-records') }}">
+                        <form class="analytics-controls record-controls" data-autosubmit method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='personal-records') }}">
                             {{ selection_fields(selection, ("record_weight",)) }}
                             <div>
                                 <label for="record-weight">External weight</label>

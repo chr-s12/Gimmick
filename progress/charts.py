@@ -15,6 +15,13 @@ class WeeklyChartBar:
     top: int
     height: int
 
+    @property
+    def date_label(self) -> str:
+        start, end = self.week.week_start, self.week.week_end
+        if start.month == end.month:
+            return f"{start.day}–{end.day} {end:%b}"
+        return f"{start.day} {start:%b}–{end.day} {end:%b}"
+
 
 @dataclass(frozen=True)
 class WeeklyChart:

@@ -186,14 +186,23 @@
 }
 .gymmick-progress .analytics-primary { grid-column: 1 / -1; }
 .gymmick-progress .analytics-primary .card-heading { margin-bottom: .5rem; }
-.gymmick-progress .weekly-chart-scroll,
-.gymmick-progress .exercise-chart-scroll {
-    max-width: 100%;
-    overflow-x: auto;
+.gymmick-progress .chart-frame {
+    display: grid;
+    grid-template-columns: var(--axis-width) minmax(0, 1fr);
     margin-block: .75rem;
     border: 1px solid var(--border);
     border-radius: .65rem;
     background: #f8faff;
+}
+.gymmick-progress .chart-fixed-axis { display: block; fill: var(--muted); font-size: 14px; }
+.gymmick-progress .weekly-chart-scroll,
+.gymmick-progress .exercise-chart-scroll { min-width: 0; overflow-x: auto; }
+.gymmick-progress .weekly-chart-scroll:focus-visible,
+.gymmick-progress .exercise-chart-scroll:focus-visible { outline-offset: -3px; }
+.gymmick-progress .chart-frame .weekly-chart,
+.gymmick-progress .chart-frame .exercise-chart {
+    /* Keep the full SVG for export. Its own scale is cropped on screen by the scroll region. */
+    margin-inline-start: calc(-1 * var(--axis-width));
 }
 .gymmick-progress .weekly-chart {
     display: block;
@@ -291,9 +300,7 @@
 
 .gymmick-progress .exercise-chart {
     display: block;
-    width: 100%;
-    min-width: 550px;
-    height: auto;
+    max-width: none;
     fill: var(--muted);
     font-size: 14px;
     font-variant-numeric: tabular-nums;
@@ -409,3 +416,54 @@
     padding: .45rem .25rem;
 }
 .gymmick-progress .chart-download-status:empty { margin: 0; }
+
+.gymmick-progress [hidden] { display: none; }
+
+.gymmick-progress.progress-integrated {
+    --background: inherit;
+    --surface: inherit;
+    --text: inherit;
+    --muted: inherit;
+    --border: var(--line);
+    --blue: var(--accent);
+    --blue-dark: var(--accent-dark);
+    --light-blue: var(--accent-soft);
+    font: inherit;
+    min-height: 0;
+}
+.progress-integrated h1 { font-size: 1.6rem; letter-spacing: normal; }
+.progress-integrated h2 { font-size: 1.15rem; letter-spacing: normal; }
+.progress-integrated h3 { font-size: 1rem; }
+.progress-integrated .page-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .15rem 1rem;
+    align-items: start;
+    margin-bottom: 1.2rem;
+}
+.progress-integrated .page-heading h1 { grid-area: 1 / 1; margin: 0; }
+.progress-integrated .page-heading p { grid-area: 2 / 1; margin: 0; }
+.progress-integrated .page-heading > a { grid-area: 1 / 2 / 3; align-self: center; }
+.progress-integrated .progress-card { border-radius: var(--radius); padding: 18px 20px; box-shadow: none; }
+.progress-integrated .analytics-grid { grid-template-columns: minmax(0, 1fr); }
+.progress-integrated .record-achievements { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
+.progress-integrated .chart-frame, .progress-integrated .record-achievement { background: var(--surface); }
+.progress-integrated .weekly-current .weekly-bar { fill: var(--accent-soft); }
+.progress-integrated .progress-button { font: inherit; font-weight: 600; }
+.progress-integrated .chart-save-actions .progress-button,
+.progress-integrated .page-heading > a {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--line);
+}
+.progress-integrated .chart-save-actions .progress-button:hover { background: var(--background); }
+.progress-integrated .analytics-controls select,
+.progress-integrated .analytics-controls input,
+.progress-integrated .number-field input { border-color: #d1d5db; border-radius: 8px; }
+
+@media (max-width: 450px) {
+    .progress-integrated .page-heading { grid-template-columns: minmax(0, 1fr); }
+    .progress-integrated .page-heading > a { grid-area: 3 / 1; justify-self: start; margin-top: .5rem; }
+    .progress-integrated .progress-card { padding: 14px; }
+    .progress-integrated .analytics-controls > div { flex-basis: 100%; }
+}

@@ -14,6 +14,23 @@ class ProgressLayoutTests(unittest.TestCase):
         })
         self.client = self.app.test_client()
 
+    def test_signed_in_progress_pages_use_the_shared_navigation(self):
+        directory = Path(self.enterContext(TemporaryDirectory()))
+        app = create_app({"TESTING": True, "DATA_DIR": directory / "data", "LOG_DIR": directory / "logs"})
+        app.extensions["gymmick"]["accounts"].createAccount("620100001", "Alex Brown", "student", "secret123")
+        client = app.test_client()
+        self.assertEqual(client.post("/login", data={"uwiId": "620100001", "password": "secret123"}).status_code, 302)
+        for path, active in (("/progress/", "/progress/"), ("/progress/history", "/progress/"),
+                             ("/progress/analytics", "/progress/analytics")):
+            with self.subTest(path=path):
+                response = client.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b'aria-label="Main navigation"', response.data)
+                self.assertNotIn(b'aria-label="Progress navigation"', response.data)
+                self.assertIn(f'href="{active}" aria-current="page"'.encode(), response.data)
+                self.assertIn(b'href="/static/app.css"', response.data)
+                self.assertIn(b'href="/progress/static/css/feature4.css"', response.data)
+
     def assert_layout(self, response, active_path, current="page"):
         self.assertIn(b'aria-label="Progress navigation"', response.data)
         self.assertIn(b'href="/progress/static/css/feature4.css"', response.data)

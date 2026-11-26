@@ -1,9 +1,10 @@
 {% extends "progress/base.html" %}
 {% block title %}Log Workout{% endblock %}
-{% block content %}
+{% block progress_content %}
     <div class="page-heading">
         <h1>Log Workout</h1>
         <p>Welcome, {{ student.username }}. Choose a saved routine to log a completed workout.</p>
+        {% if currentUser %}<a class="btn secondary" href="{{ url_for('progress.workout_history') }}">Workout History</a>{% endif %}
     </div>
 
     <h2>My Saved Routines</h2>

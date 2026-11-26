@@ -1,6 +1,7 @@
 {% extends "progress/base.html" %}
 {% block title %}My Progress{% endblock %}
-{% block page_resources %}
+{% block progress_head %}
+    <script type="module" src="{{ url_for('progress.static', filename='js/analytics_controls.js') }}"></script>
     {% if not period_error and analytics.weekly_consistency %}
         <script type="module" src="{{ url_for('progress.static', filename='js/weekly_chart_download.js') }}"></script>
     {% endif %}
@@ -8,10 +9,11 @@
         <script type="module" src="{{ url_for('progress.static', filename='js/exercise_chart_download.js') }}"></script>
     {% endif %}
 {% endblock %}
-{% block content %}
+{% block progress_content %}
     <div class="page-heading">
         <h1>My Progress</h1>
         <p>Track training consistency, exercise progression, and all-time personal records.</p>
+        {% if currentUser %}<a class="btn secondary" href="{{ url_for('progress.workout_history') }}">Workout History</a>{% endif %}
     </div>
 
     {% include "progress/analytics_period.html" %}
@@ -54,11 +56,19 @@
                         </div>
                     {% endif %}
                 </div>
-                <p>Active training days per Monday–Sunday week, Jamaica time.</p>
+                <p>Active days per Monday–Sunday week, Jamaica time.</p>
                 {% if analytics.weekly_consistency %}
                     <p id="weekly-download-status" class="chart-download-status" role="status"></p>
-                    <div class="weekly-chart-scroll" role="region" aria-label="Weekly Consistency chart, scroll for more weeks" tabindex="0">
-                        {% include "progress/weekly_chart.svg" %}
+                    <div class="chart-frame" style="--axis-width: {{ weekly_chart.axis_x }}px">
+                        <svg class="chart-fixed-axis" aria-hidden="true" focusable="false"
+                             width="{{ weekly_chart.axis_x }}" height="{{ weekly_chart.height }}">
+                            {% for days, y in weekly_chart.ticks %}
+                                <text class="weekly-scale" x="{{ weekly_chart.axis_x - 9 }}" y="{{ y + 4 }}" text-anchor="end">{{ days }}</text>
+                            {% endfor %}
+                        </svg>
+                        <div class="weekly-chart-scroll" role="region" aria-label="Weekly Consistency chart, scroll for more weeks" tabindex="0">
+                            {% include "progress/weekly_chart.svg" %}
+                        </div>
                     </div>
                     <details class="weekly-chart-details">
                         <summary>View weekly data</summary>

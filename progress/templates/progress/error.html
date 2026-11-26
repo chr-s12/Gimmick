@@ -1,6 +1,6 @@
 {% extends "progress/base.html" %}
 {% block title %}{{ title }}{% endblock %}
-{% block content %}
+{% block progress_content %}
     <div class="page-heading"><h1>{{ title }}</h1></div>
     <p class="progress-notice error" role="alert">{{ message }}</p>
     {% if request.endpoint == 'progress.workout_summary' %}

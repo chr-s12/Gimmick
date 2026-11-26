@@ -3,7 +3,7 @@
      viewBox="0 0 {{ weekly_chart.width }} {{ weekly_chart.height }}"
      role="img" aria-labelledby="weekly-chart-title weekly-chart-description">
     <title id="weekly-chart-title">Weekly Consistency: active training days</title>
-    <desc id="weekly-chart-description">Active days from zero to seven, grouped by Monday start date. Exact dates, counts and statuses are available under View weekly data.</desc>
+    <desc id="weekly-chart-description">Each bar shows active days from zero to seven in one Monday–Sunday week. Exact dates, counts and statuses are available under View weekly data.</desc>
 
     {% for days, y in weekly_chart.ticks %}
         <line class="weekly-gridline{% if days == 0 %} weekly-baseline{% endif %}"
@@ -14,6 +14,7 @@
     {% for bar in weekly_chart.bars %}
         {% set week = bar.week %}
         <g class="weekly-column{% if week.is_current_week %} weekly-current{% endif %}{% if week.is_partial_week %} weekly-partial{% endif %}">
+            <title>{{ week.week_start }} to {{ week.week_end }} · {{ week.active_days }} active days</title>
             {% if bar.height %}
                 <rect class="weekly-bar" x="{{ bar.x }}" y="{{ bar.top }}"
                       width="{{ weekly_chart.bar_width }}" height="{{ bar.height }}" rx="3"/>
@@ -22,7 +23,7 @@
                       y1="{{ bar.top }}" y2="{{ bar.top }}"/>
             {% endif %}
             <text class="weekly-value" x="{{ bar.center }}" y="{{ bar.top - 7 }}" text-anchor="middle">{{ week.active_days }}</text>
-            <text class="weekly-date" x="{{ bar.center }}" y="{{ weekly_chart.baseline + 22 }}" text-anchor="middle">{{ week.week_start }}</text>
+            <text class="weekly-date" x="{{ bar.center }}" y="{{ weekly_chart.baseline + 22 }}" text-anchor="middle">{{ bar.date_label }}</text>
             {% if week.is_current_week %}
                 <text class="weekly-status" x="{{ bar.center }}" y="{{ weekly_chart.baseline + 39 }}" text-anchor="middle">Current week</text>
             {% endif %}
