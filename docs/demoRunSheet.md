@@ -52,8 +52,10 @@ If anything goes wrong mid-demo, stop the app, repeat steps 1 and 2, and log in 
      routine**. (TC-0.1.0)
    - **Browse templates** → **Add to my routines** on *Beginner full body*. "Students get their own copy."
 3. **F4, progress:** **Log workout** → **My push day**. Change Bench Press weight to `45` → **Save Completed
-   Workout**. Then **My Progress** (top bar): weekly consistency, exercise progression, personal records.
-   Select a chart's download button to save it as SVG. Select **← Gymmick home** to return.
+   Workout**. Check that the summary shows 3 sets of 8 reps at 45 kg, then select **My progress** in the sidebar.
+   Point out the Monday–Sunday ranges on Weekly Consistency. Change **Metric** to **Volume** to show that
+   the Bench Press chart updates automatically. Show Personal Records and select **Download SVG** beside
+   a chart. Select **Home** in the sidebar to return.
 4. **F5, booking:** **Book a trainer** → **Devon Clarke** → **Request this time** on the first free time.
    It shows **Waiting for trainer**. (TC-05.2)
    - On the confirmed session, **Change time** → pick another time → it goes back to Waiting for trainer.

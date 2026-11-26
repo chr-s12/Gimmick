@@ -83,11 +83,17 @@ copy, which you can edit without changing the original.
 
 ![Workout summary](screenshots/10-workout-summary.png)
 
-**My progress** shows how many days you trained each week, how each exercise is progressing (weight, reps or
-volume) and your all-time personal records. Choose a period to filter the charts. Each chart can be
-downloaded as an SVG file.
+Select **My progress** in the sidebar. Weekly Consistency shows the active days in each Monday–Sunday
+week, with skipped weeks shown as zero. In Exercise Progression, changing **Exercise** or **Metric**
+updates the chart automatically. Choose a period to filter the charts. For a custom range, enter the
+dates and select **Apply dates**. Personal Records always cover your full workout history.
 
 ![My progress](screenshots/11-my-progress.png)
+
+Open **Workout History** from **Log Workout** or **My Progress** to review completed workouts.
+Use **Download SVG** beside either chart to save it for viewing outside Gymmick.
+[Weekly Consistency example](evidence/feature-4/weekly-consistency.svg) ·
+[Bench Press Volume example](evidence/feature-4/bench-press-volume-progression.svg)
 
 ### Book a trainer (Feature 5)
 

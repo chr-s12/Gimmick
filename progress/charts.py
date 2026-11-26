@@ -143,10 +143,13 @@ def build_exercise_chart(
     tick_labels = tuple(_exercise_tick_label(tick * step) for tick in range(steps + 1))
     # Reserve room for scientific notation, including the gap before the grid.
     axis_left = max(76, 18 + 9 * max(map(len, tick_labels)))
+    # Leave room for half a centred ISO date after the fixed-axis crop.
+    plot_left = axis_left + 46
 
     def calendar_x(offset: int) -> float:
-        fraction = offset / span if span else 0.5
-        return round(axis_left + fraction * (axis_right - axis_left), 2)
+        if not span:
+            return (axis_left + axis_right) / 2
+        return round(plot_left + offset / span * (axis_right - plot_left), 2)
 
     def value_y(value: Decimal) -> float:
         return round(baseline - float(value / ceiling) * (baseline - top), 2)

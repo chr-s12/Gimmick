@@ -304,6 +304,11 @@ class ProgressDashboardTests(unittest.TestCase):
         ])
         points = chart.findall(f"{SVG}circle")
         x1, x2, x3 = [float(point.get("cx")) for point in points]
+        first_label = chart.find(f"{SVG}text[@text-anchor='middle']")
+        baseline = chart.find(f"{SVG}line[@class='exercise-gridline exercise-baseline']")
+        self.assertEqual(first_label.text, "2026-11-21")
+        self.assertEqual(float(first_label.get("x")), x1)
+        self.assertGreaterEqual(x1 - float(baseline.get("x1")), 45)
         self.assertAlmostEqual(x3 - x2, 3 * (x2 - x1))
         self.assertEqual(len({point.get("cy") for point in points}), 1)
         self.assertIsNotNone(chart.find(f"{SVG}polyline"))
