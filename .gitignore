@@ -1,11 +1,19 @@
-# Python
-__pycache__/
-*.py[cod]
+# Virtual environment
 .venv/
 venv/
-.pytest_cache/
 
-# Local runtime data (recreate with: python seedData.py --reset)
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# Testing cache
+.pytest_cache/
+.coverage
+
+# Local environment variables
+.env
+
+# Local application & runtime data (recreate with: python seedData.py --reset)
 data/
 logs/
 

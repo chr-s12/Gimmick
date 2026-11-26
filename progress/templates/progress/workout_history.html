@@ -1,0 +1,32 @@
+{% extends "progress/base.html" %}
+{% block title %}Workout History{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <h1>Workout History</h1>
+        <p>Review your completed workouts, newest first.</p>
+    </div>
+
+    {% if workouts %}
+        <ul class="card-list">
+            {% for workout in workouts %}
+                <li class="progress-card history-card">
+                    <div>
+                        <h2>{{ workout.routine_name }}</h2>
+                        <p>
+                            Completed at:
+                            <time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at | gymmick_completed_time }}</time>
+                        </p>
+                        <p>Completed exercises: {{ workout.exercises | length }}</p>
+                    </div>
+                    <a href="{{ url_for('progress.workout_summary', workout_id=workout.workout_id) }}">View {{ workout.routine_name }} workout summary</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="progress-card">
+            <p>You have no completed workouts yet. Choose a saved routine to log your first workout.</p>
+        </div>
+    {% endif %}
+
+    <a class="back-link" href="{{ url_for('progress.dashboard') }}">Back to My Routines</a>
+{% endblock %}

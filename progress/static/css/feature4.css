@@ -1,0 +1,409 @@
+.gymmick-progress {
+    --background: #f3f6fa;
+    --surface: #fff;
+    --text: #15233b;
+    --muted: #4e5e74;
+    --border: #d6dfeb;
+    --blue: #1850af;
+    --blue-dark: #123e8b;
+    --light-blue: #edf4ff;
+    --danger: #912626;
+    margin: 0;
+    min-height: 100vh;
+    background: var(--background);
+    color: var(--text);
+    font: 1rem/1.55 system-ui, -apple-system, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+.gymmick-progress *,
+.gymmick-progress *::before,
+.gymmick-progress *::after {
+    box-sizing: border-box;
+}
+
+.gymmick-progress a { color: var(--blue-dark); text-underline-offset: .18em; }
+.gymmick-progress :focus-visible { outline: 3px solid #2571e1; outline-offset: 3px; }
+.gymmick-progress h1,
+.gymmick-progress h2,
+.gymmick-progress h3 { margin: 0 0 .65rem; line-height: 1.2; }
+.gymmick-progress h1 { font-size: clamp(2rem, 5vw, 3.25rem); letter-spacing: -.045em; }
+.gymmick-progress h2 { font-size: 1.35rem; letter-spacing: -.02em; }
+.gymmick-progress h3 { font-size: 1.1rem; }
+.gymmick-progress p { margin: 0 0 .8rem; }
+.gymmick-progress .progress-shell { width: min(100% - 2.5rem, 70rem); margin-inline: auto; }
+.gymmick-progress .progress-main { padding-block: clamp(1.75rem, 5vw, 3.5rem); }
+
+.gymmick-progress .progress-header { background: #111f36; color: #fff; }
+.gymmick-progress .header-inner {
+    display: flex;
+    gap: 1rem 2rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding-block: .7rem;
+}
+.gymmick-progress .progress-brand {
+    color: #fff;
+    font-size: 1.45rem;
+    font-weight: 750;
+    letter-spacing: -.045em;
+    text-decoration: none;
+}
+.gymmick-progress .progress-brand span { color: #84b4ff; }
+.gymmick-progress .progress-nav { display: flex; gap: .35rem; flex-wrap: wrap; }
+.gymmick-progress .progress-nav a {
+    padding: .6rem .85rem;
+    border-radius: .5rem;
+    color: #d9e5f7;
+    font-weight: 650;
+    text-decoration: none;
+}
+.gymmick-progress .progress-nav a:hover { background: #233c62; color: #fff; }
+.gymmick-progress .progress-nav a[aria-current] { background: #e3efff; color: #112e59; }
+
+.gymmick-progress .page-heading { margin-bottom: clamp(1.4rem, 4vw, 2.3rem); }
+.gymmick-progress .page-heading > p,
+.gymmick-progress .progress-card > p { color: var(--muted); }
+.gymmick-progress .card-grid,
+.gymmick-progress .analytics-grid,
+.gymmick-progress .field-grid,
+.gymmick-progress .workout-details {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gymmick-progress .progress-card {
+    min-width: 0;
+    margin: 0;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 1px solid var(--border);
+    border-radius: .9rem;
+    background: var(--surface);
+    box-shadow: 0 3px 10px #14274709;
+}
+.gymmick-progress .progress-card > :last-child { margin-bottom: 0; }
+.gymmick-progress .card-heading,
+.gymmick-progress .history-card {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .35rem 1rem;
+}
+.gymmick-progress .card-heading h2,
+.gymmick-progress .card-heading h3,
+.gymmick-progress .history-card p:last-child { margin-bottom: 0; }
+.gymmick-progress .meta-tag {
+    padding: .25rem .6rem;
+    border-radius: 1rem;
+    background: var(--light-blue);
+    color: var(--blue-dark);
+    font-size: .86rem;
+    font-weight: 650;
+}
+.gymmick-progress .card-list,
+.gymmick-progress .exercise-list { padding: 0; margin: 0; list-style: none; }
+.gymmick-progress .card-list,
+.gymmick-progress .workout-form { display: grid; gap: 1rem; }
+.gymmick-progress .exercise-list { margin-block: .8rem 1.25rem; }
+.gymmick-progress .exercise-list li {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .2rem .7rem;
+    padding-block: .6rem;
+    border-bottom: 1px solid var(--border);
+}
+.gymmick-progress .exercise-list span,
+.gymmick-progress .history-card p { color: var(--muted); }
+
+.gymmick-progress .progress-button {
+    display: inline-block;
+    justify-self: start;
+    padding: .65rem 1rem;
+    border: 1px solid transparent;
+    border-radius: .5rem;
+    background: var(--blue);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+.gymmick-progress .progress-button:hover { background: var(--blue-dark); }
+.gymmick-progress .back-link { display: inline-block; margin-top: 1rem; }
+.gymmick-progress .progress-links { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: 1rem; }
+.gymmick-progress fieldset legend { padding: 0 .35rem; font-size: 1.15rem; font-weight: 700; }
+.gymmick-progress .field-grid,
+.gymmick-progress .workout-details { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.gymmick-progress .number-field label { display: block; margin-bottom: .3rem; font-weight: 650; }
+.gymmick-progress .number-field input {
+    width: 100%;
+    min-width: 0;
+    padding: .6rem .7rem;
+    border: 1px solid #8293a9;
+    border-radius: .45rem;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+}
+.gymmick-progress .number-field input[aria-invalid="true"] { border-color: var(--danger); }
+.gymmick-progress .field-error { display: block; margin-top: .25rem; color: var(--danger); }
+.gymmick-progress .progress-notice {
+    padding: .65rem .9rem;
+    border: 1px solid;
+    border-radius: .5rem;
+    font-weight: 600;
+}
+.gymmick-progress .progress-notice.error { background: #fef0f0; border-color: #e8baba; color: var(--danger); }
+.gymmick-progress .progress-notice.success { background: #eaf7ee; border-color: #acd5b6; color: #175d37; }
+
+.gymmick-progress .workout-details { margin: 1rem 0 1.5rem; }
+.gymmick-progress .workout-details dt { font-weight: 650; }
+.gymmick-progress .workout-details dd { margin: 0; color: var(--muted); }
+.gymmick-progress .exercise-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-variant-numeric: tabular-nums;
+}
+.gymmick-progress .exercise-table th,
+.gymmick-progress .exercise-table td {
+    padding: .55rem clamp(.25rem, 2vw, .75rem);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+.gymmick-progress .exercise-table th { background: var(--light-blue); }
+.gymmick-progress .exercise-table th:first-child { width: 40%; }
+
+.gymmick-progress .analytics-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+}
+.gymmick-progress .analytics-primary { grid-column: 1 / -1; }
+.gymmick-progress .analytics-primary .card-heading { margin-bottom: .5rem; }
+.gymmick-progress .weekly-chart-scroll,
+.gymmick-progress .exercise-chart-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    margin-block: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .65rem;
+    background: #f8faff;
+}
+.gymmick-progress .weekly-chart {
+    display: block;
+    max-width: none;
+    fill: var(--text);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+.gymmick-progress .weekly-gridline { stroke: var(--border); }
+.gymmick-progress .weekly-baseline { stroke: #8798b0; }
+.gymmick-progress .weekly-scale,
+.gymmick-progress .weekly-status { fill: var(--muted); font-size: 12px; }
+.gymmick-progress .weekly-bar { fill: var(--blue); }
+.gymmick-progress .weekly-zero { stroke: var(--blue); stroke-width: 3px; }
+.gymmick-progress .weekly-value,
+.gymmick-progress .weekly-status { font-weight: 700; }
+.gymmick-progress .weekly-current .weekly-bar {
+    fill: #d7e7ff;
+    stroke: var(--blue);
+    stroke-width: 2px;
+    stroke-dasharray: 4 3;
+}
+.gymmick-progress .weekly-current .weekly-zero { stroke-dasharray: 4 3; }
+.gymmick-progress .weekly-chart-details summary,
+.gymmick-progress .exercise-chart-details summary {
+    width: fit-content;
+    color: var(--blue-dark);
+    font-weight: 650;
+    cursor: pointer;
+}
+.gymmick-progress .weekly-chart-details[open] summary,
+.gymmick-progress .exercise-chart-details[open] summary { margin-bottom: .6rem; }
+.gymmick-progress .analytics-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    align-items: end;
+    margin-block: 1rem 1.25rem;
+}
+.gymmick-progress .analytics-controls > div {
+    position: relative;
+    flex: 1 1 10rem;
+    min-width: 0;
+}
+.gymmick-progress .analytics-controls label {
+    display: block;
+    margin-bottom: .25rem;
+    font-weight: 650;
+}
+.gymmick-progress .analytics-controls select {
+    width: 100%;
+    padding: .65rem 1.8rem .65rem .7rem;
+    appearance: none;
+    border: 1px solid #8293a9;
+    border-radius: .45rem;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+.gymmick-progress .analytics-controls > div::after {
+    position: absolute;
+    right: .8rem;
+    bottom: 1.22rem;
+    width: .45rem;
+    height: .45rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    pointer-events: none;
+    content: "";
+}
+.gymmick-progress .period-card { margin-bottom: 1rem; }
+.gymmick-progress .period-controls { margin-block: .75rem .5rem; }
+.gymmick-progress .period-controls > div { flex: 0 1 10rem; }
+.gymmick-progress .period-controls > .period-select { flex-basis: 12rem; }
+.gymmick-progress .period-controls > div:not(.period-select)::after { content: none; }
+.gymmick-progress .period-controls input[type="date"] {
+    width: 100%;
+    min-width: 0;
+    padding: .65rem .7rem;
+    border: 1px solid #8293a9;
+    border-radius: .45rem;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+.gymmick-progress .period-controls > a { align-self: center; font-weight: 650; }
+.gymmick-progress #period-help { font-size: .9rem; }
+.gymmick-progress .period-empty {
+    margin-block: 1rem;
+    padding: .7rem 1rem;
+    border-radius: .6rem;
+    background: var(--light-blue);
+}
+
+.gymmick-progress .exercise-chart {
+    display: block;
+    width: 100%;
+    min-width: 550px;
+    height: auto;
+    fill: var(--muted);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+.gymmick-progress .exercise-gridline { stroke: var(--border); }
+.gymmick-progress .exercise-baseline { stroke: #8798b0; }
+.gymmick-progress .exercise-trend {
+    fill: none;
+    stroke: var(--blue);
+    stroke-width: 2px;
+    stroke-dasharray: 5 3;
+}
+.gymmick-progress .exercise-point { fill: var(--blue-dark); stroke: #fff; stroke-width: 1px; }
+
+.gymmick-progress .analytics-table th:first-child { width: 55%; }
+.gymmick-progress .analytics-table th:nth-child(2) { width: 20%; }
+.gymmick-progress .record-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-block: .75rem 1rem;
+}
+.gymmick-progress .record-controls select { text-overflow: ellipsis; }
+.gymmick-progress .record-controls .progress-button {
+    padding-inline: .7rem;
+    font-size: .92rem;
+}
+.gymmick-progress .record-achievements { display: grid; gap: .65rem; }
+.gymmick-progress .record-achievement {
+    padding: .75rem .85rem;
+    border: 1px solid var(--border);
+    border-inline-start: 3px solid var(--blue);
+    border-radius: .6rem;
+    background: #f8faff;
+    font-variant-numeric: tabular-nums;
+}
+.gymmick-progress .record-achievement h3 { margin-bottom: .35rem; font-size: 1rem; }
+.gymmick-progress .record-achievement .record-value {
+    margin-bottom: .2rem;
+    font-size: 1.55rem;
+    font-weight: 750;
+    line-height: 1.2;
+}
+.gymmick-progress .record-value span {
+    white-space: nowrap;
+    font-size: .9rem;
+    font-weight: 650;
+}
+.gymmick-progress .record-achievement .record-weight,
+.gymmick-progress .record-achievement .record-date,
+.gymmick-progress .record-availability { color: var(--muted); font-size: .88rem; }
+.gymmick-progress .record-achievement .record-weight { margin-bottom: .2rem; }
+.gymmick-progress .record-achievement .record-date { margin-bottom: 0; }
+.gymmick-progress .record-availability { margin-top: .75rem; }
+
+.gymmick-progress .visually-hidden,
+.gymmick-progress .skip-link:not(:focus) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.gymmick-progress .skip-link:focus {
+    position: absolute;
+    top: .5rem;
+    left: .5rem;
+    z-index: 1;
+    padding: .5rem .75rem;
+    background: #fff;
+}
+
+@media (min-width: 44.01rem) and (max-width: 58rem) {
+    .gymmick-progress .record-controls { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 44rem) {
+    .gymmick-progress .card-grid,
+    .gymmick-progress .analytics-grid,
+    .gymmick-progress .workout-details { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 32rem) {
+    .gymmick-progress .progress-shell { width: calc(100% - 2rem); }
+    .gymmick-progress .header-inner { gap: .25rem 1rem; }
+    .gymmick-progress .progress-nav { width: 100%; }
+    .gymmick-progress .progress-nav a { padding-inline: .65rem; }
+    .gymmick-progress .field-grid { grid-template-columns: minmax(0, 1fr); }
+    .gymmick-progress .period-controls > div { flex: 1 1 8.5rem; }
+    .gymmick-progress .period-controls > .period-select { flex-basis: 100%; }
+}
+
+.gymmick-progress .chart-save-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .35rem .65rem;
+    max-width: 100%;
+}
+.gymmick-progress .chart-save-actions [hidden] { display: none; }
+.gymmick-progress .chart-save-actions [aria-disabled="true"] { opacity: .72; cursor: wait; }
+.gymmick-progress .chart-download-alternative {
+    border: 0;
+    background: transparent;
+    color: var(--blue-dark);
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+    cursor: pointer;
+    padding: .45rem .25rem;
+}
+.gymmick-progress .chart-download-status:empty { margin: 0; }

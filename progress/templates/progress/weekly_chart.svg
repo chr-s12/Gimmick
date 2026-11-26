@@ -1,0 +1,34 @@
+<svg class="weekly-chart" id="weekly-consistency-chart" xmlns="http://www.w3.org/2000/svg"
+     width="{{ weekly_chart.width }}" height="{{ weekly_chart.height }}"
+     viewBox="0 0 {{ weekly_chart.width }} {{ weekly_chart.height }}"
+     role="img" aria-labelledby="weekly-chart-title weekly-chart-description">
+    <title id="weekly-chart-title">Weekly Consistency: active training days</title>
+    <desc id="weekly-chart-description">Active days from zero to seven, grouped by Monday start date. Exact dates, counts and statuses are available under View weekly data.</desc>
+
+    {% for days, y in weekly_chart.ticks %}
+        <line class="weekly-gridline{% if days == 0 %} weekly-baseline{% endif %}"
+              x1="{{ weekly_chart.axis_x }}" y1="{{ y }}" x2="{{ weekly_chart.width - 12 }}" y2="{{ y }}"/>
+        <text class="weekly-scale" x="{{ weekly_chart.axis_x - 9 }}" y="{{ y + 4 }}" text-anchor="end">{{ days }}</text>
+    {% endfor %}
+
+    {% for bar in weekly_chart.bars %}
+        {% set week = bar.week %}
+        <g class="weekly-column{% if week.is_current_week %} weekly-current{% endif %}{% if week.is_partial_week %} weekly-partial{% endif %}">
+            {% if bar.height %}
+                <rect class="weekly-bar" x="{{ bar.x }}" y="{{ bar.top }}"
+                      width="{{ weekly_chart.bar_width }}" height="{{ bar.height }}" rx="3"/>
+            {% else %}
+                <line class="weekly-zero" x1="{{ bar.x }}" x2="{{ bar.x + weekly_chart.bar_width }}"
+                      y1="{{ bar.top }}" y2="{{ bar.top }}"/>
+            {% endif %}
+            <text class="weekly-value" x="{{ bar.center }}" y="{{ bar.top - 7 }}" text-anchor="middle">{{ week.active_days }}</text>
+            <text class="weekly-date" x="{{ bar.center }}" y="{{ weekly_chart.baseline + 22 }}" text-anchor="middle">{{ week.week_start }}</text>
+            {% if week.is_current_week %}
+                <text class="weekly-status" x="{{ bar.center }}" y="{{ weekly_chart.baseline + 39 }}" text-anchor="middle">Current week</text>
+            {% endif %}
+            {% if week.is_partial_week %}
+                <text class="weekly-status" x="{{ bar.center }}" y="{{ weekly_chart.baseline + (56 if week.is_current_week else 39) }}" text-anchor="middle">Partial selection</text>
+            {% endif %}
+        </g>
+    {% endfor %}
+</svg>

@@ -1,0 +1,94 @@
+{% extends "progress/base.html" %}
+{% block title %}My Progress{% endblock %}
+{% block page_resources %}
+    {% if not period_error and analytics.weekly_consistency %}
+        <script type="module" src="{{ url_for('progress.static', filename='js/weekly_chart_download.js') }}"></script>
+    {% endif %}
+    {% if exercise_chart %}
+        <script type="module" src="{{ url_for('progress.static', filename='js/exercise_chart_download.js') }}"></script>
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <h1>My Progress</h1>
+        <p>Track training consistency, exercise progression, and all-time personal records.</p>
+    </div>
+
+    {% include "progress/analytics_period.html" %}
+
+    {% if period_error %}
+        <p>No date filter was applied. Correct the selection or reset to All time.</p>
+    {% elif not analytics.has_workouts %}
+        <section class="progress-card">
+            <h2>No completed workouts yet</h2>
+            <p>Log at least one completed workout to see your analytics here.</p>
+            <a class="progress-button" href="{{ url_for('progress.dashboard') }}">Log Workout</a>
+        </section>
+    {% else %}
+        {% if not analytics.has_workouts_in_period %}
+            <p class="period-empty" role="status">No workouts were recorded in the selected period. <a href="#analytics-period">Change the period</a> to see more workouts.</p>
+        {% endif %}
+        <div class="analytics-grid">
+            <section class="progress-card analytics-primary">
+                <div class="card-heading">
+                    <h2 id="weekly-consistency">Weekly Consistency</h2>
+                    {% if analytics.weekly_consistency %}
+                        {% set weeks = analytics.weekly_consistency %}
+                        <div class="chart-save-actions">
+                            <button class="progress-button" id="download-weekly-chart" type="button" hidden
+                                    aria-label="Download SVG for Weekly Consistency"
+                                    aria-controls="weekly-consistency-chart"
+                                    aria-describedby="weekly-download-status"
+                                    data-period="{{ period_labels[period] }}"
+                                    data-start-date="{{ analytics.start_date or '' }}"
+                                    data-end-date="{{ analytics.end_date or '' }}"
+                                    data-first-week="{{ weeks[0].week_start }}"
+                                    data-last-week-end="{{ weeks[-1].week_end }}"
+                                    {% if weeks | selectattr('is_current_week') | first %}data-current-week="true"{% endif %}
+                                    {% if weeks | selectattr('is_partial_week') | first %}data-partial-week="true"{% endif %}>
+                                Download SVG
+                            </button>
+                            <button class="chart-download-alternative" id="download-weekly-chart-alternative" type="button" hidden
+                                    aria-label="Download SVG for Weekly Consistency" aria-controls="weekly-consistency-chart"
+                                    aria-describedby="weekly-download-status">Download SVG</button>
+                        </div>
+                    {% endif %}
+                </div>
+                <p>Active training days per Monday–Sunday week, Jamaica time.</p>
+                {% if analytics.weekly_consistency %}
+                    <p id="weekly-download-status" class="chart-download-status" role="status"></p>
+                    <div class="weekly-chart-scroll" role="region" aria-label="Weekly Consistency chart, scroll for more weeks" tabindex="0">
+                        {% include "progress/weekly_chart.svg" %}
+                    </div>
+                    <details class="weekly-chart-details">
+                        <summary>View weekly data</summary>
+                        <table class="exercise-table analytics-table" aria-label="Weekly consistency data">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Week</th>
+                                    <th scope="col">Active days</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for week in analytics.weekly_consistency %}
+                                    <tr>
+                                        <td><time datetime="{{ week.week_start }}">{{ week.week_start }}</time> – <time datetime="{{ week.week_end }}">{{ week.week_end }}</time></td>
+                                        <td>{{ week.active_days }}</td>
+                                        <td>{% if week.is_current_week %}Current (incomplete){% else %}Completed{% endif %}{% if week.is_partial_week %} · Partial selection{% endif %}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </details>
+                {% else %}
+                    <p>No weeks are available within the selected dates.</p>
+                {% endif %}
+            </section>
+
+            {% include "progress/exercise_progression.html" %}
+
+            {% include "progress/personal_records.html" %}
+        </div>
+    {% endif %}
+{% endblock %}

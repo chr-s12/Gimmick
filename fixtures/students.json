@@ -1,0 +1,13 @@
+
+[
+    {
+        "student_id": "ST001",
+        "username": "Alex",
+        "role": "student"
+    },
+    {
+        "student_id": "ST002",
+        "username": "Jordan",
+        "role": "student"
+    }
+]

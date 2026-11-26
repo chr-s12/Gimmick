@@ -1,0 +1,69 @@
+{% from "progress/selection_fields.html" import selection_fields %}
+{% macro achieved_on(record) %}
+    <p class="record-date">First achieved <time datetime="{{ record.achieved_date }}">{{ record.achieved_date }}</time></p>
+{% endmacro %}
+<section class="progress-card" id="personal-records" aria-labelledby="personal-records-heading">
+    <h2 id="personal-records-heading">All-time Personal Records</h2>
+    <p>First-achievement dates use Jamaica time.</p>
+    {% if selected_records %}
+        <form class="analytics-controls record-controls" method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='personal-records') }}">
+            {{ selection_fields(selection, ("record_exercise", "record_weight")) }}
+            <div>
+                <label for="record-exercise">Record exercise</label>
+                <select id="record-exercise" name="record_exercise">
+                    {% for option_id, label in record_options %}
+                        <option value="{{ option_id }}"{% if option_id == selected_records.exercise_id %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="progress-button" type="submit">Show records</button>
+        </form>
+        <div class="record-achievements">
+            {% if selected_records.heaviest_weight %}
+                {% set best = selected_records.heaviest_weight %}
+                <div class="record-achievement" id="heaviest-weight">
+                    <h3>Heaviest Weight</h3>
+                    <p class="record-value">{{ best.value }} <span>kg</span></p>
+                    {{ achieved_on(best) }}
+                </div>
+            {% endif %}
+            {% if selected_repetition %}
+                <div class="record-achievement" id="repetition-record">
+                    <h3>Repetition Record</h3>
+                    {% if selected_records.repetition_records | length > 1 %}
+                        <form class="analytics-controls record-controls" method="get" action="{{ url_for('progress.analytics_dashboard', _anchor='personal-records') }}">
+                            {{ selection_fields(selection, ("record_weight",)) }}
+                            <div>
+                                <label for="record-weight">External weight</label>
+                                <select id="record-weight" name="record_weight">
+                                    {% for record in selected_records.repetition_records %}
+                                        <option value="{{ record.weight_kg }}"{% if record == selected_repetition %} selected{% endif %}>{% if record.weight_kg == 0 %}Unweighted (0 kg){% else %}{{ record.weight_kg }} kg{% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="progress-button" type="submit">Show reps</button>
+                        </form>
+                    {% endif %}
+                    <p class="record-value">{{ selected_repetition.reps }} <span>reps per set</span></p>
+                    <p class="record-weight">{% if selected_repetition.weight_kg == 0 %}Unweighted (0 kg external weight){% else %}At {{ selected_repetition.weight_kg }} kg external weight{% endif %}</p>
+                    {{ achieved_on(selected_repetition) }}
+                </div>
+            {% endif %}
+            {% if selected_records.highest_session_volume %}
+                {% set best = selected_records.highest_session_volume %}
+                <div class="record-achievement" id="highest-session-volume">
+                    <h3>Highest Session Volume</h3>
+                    <p class="record-value">{{ best.value }} <span>kg</span></p>
+                    <p class="record-weight">For this exercise in one workout</p>
+                    {{ achieved_on(best) }}
+                </div>
+            {% endif %}
+        </div>
+        {% if not selected_records.heaviest_weight and not selected_records.highest_session_volume %}
+            <p class="record-availability">Weight and session-volume records require external weight.</p>
+        {% endif %}
+    {% else %}
+        <p>No eligible personal records yet. Log a completed workout to see your records.</p>
+        <a class="progress-button" href="{{ url_for('progress.dashboard') }}">Log Workout</a>
+    {% endif %}
+</section>

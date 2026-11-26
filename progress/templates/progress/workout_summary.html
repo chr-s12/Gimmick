@@ -1,0 +1,46 @@
+{% extends "progress/base.html" %}
+{% block title %}Workout Summary{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <h1>Completed Workout Summary</h1>
+        <p class="progress-notice success" role="status">Workout saved successfully.</p>
+    </div>
+
+    <section class="progress-card">
+        <h2>{{ workout.routine_name }}</h2>
+        <dl class="workout-details">
+            <div><dt>Workout ID</dt><dd>{{ workout.workout_id }}</dd></div>
+            <div><dt>Student ID</dt><dd>{{ workout.student_id }}</dd></div>
+            <div>
+                <dt>Completed at</dt>
+                <dd><time datetime="{{ workout.completed_at.isoformat() }}">{{ workout.completed_at | gymmick_completed_time }}</time></dd>
+            </div>
+        </dl>
+        <h3 id="completed-exercises">Completed Exercises</h3>
+        <table class="exercise-table" aria-labelledby="completed-exercises">
+            <thead>
+                <tr>
+                    <th scope="col">Exercise</th>
+                    <th scope="col">Sets</th>
+                    <th scope="col">Reps</th>
+                    <th scope="col">Weight (kg)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exercise in workout.exercises %}
+                    <tr>
+                        <td>{{ exercise.exercise_name }}</td>
+                        <td>{{ exercise.sets }}</td>
+                        <td>{{ exercise.reps }}</td>
+                        <td>{{ exercise.weight_kg }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <div class="progress-links">
+        <a href="{{ url_for('progress.workout_history') }}">Back to Workout History</a>
+        <a href="{{ url_for('progress.dashboard') }}">Back to My Routines</a>
+    </div>
+{% endblock %}

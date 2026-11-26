@@ -1,0 +1,48 @@
+{% from "progress/selection_fields.html" import selection_fields %}
+<section class="progress-card period-card" id="analytics-period" aria-labelledby="analytics-period-heading">
+    <h2 id="analytics-period-heading">Analytics period</h2>
+    {% if period_error %}
+        <p class="progress-notice error" id="period-error" role="alert">{{ period_error }}</p>
+    {% else %}
+        <p class="applied-period">
+            <strong>Applied:</strong> {{ period_labels[period] }}
+            {% if analytics.start_date and analytics.end_date %}
+                · <time datetime="{{ analytics.start_date }}">{{ analytics.start_date }}</time>
+                through <time datetime="{{ analytics.end_date }}">{{ analytics.end_date }}</time>
+            {% elif analytics.start_date %}
+                · From <time datetime="{{ analytics.start_date }}">{{ analytics.start_date }}</time>
+            {% elif analytics.end_date %}
+                · Through <time datetime="{{ analytics.end_date }}">{{ analytics.end_date }}</time>
+            {% endif %}
+        </p>
+    {% endif %}
+    <form class="analytics-controls period-controls" method="get"
+          action="{{ url_for('progress.analytics_dashboard', _anchor='analytics-period') }}"
+          aria-describedby="period-help{% if period_error %} period-error{% endif %}">
+        {{ selection_fields(chart_selection, ()) }}
+        <div class="period-select">
+            <label for="period">Period</label>
+            <select id="period" name="period" required>
+                {% if period not in period_labels %}
+                    <option value="" disabled selected>Choose a period</option>
+                {% endif %}
+                {% for key, label in period_labels.items() %}
+                    <option value="{{ key }}"{% if period == key %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="period-start">Start date</label>
+            <input id="period-start" type="date" name="start_date" value="{{ form_start }}">
+        </div>
+        <div>
+            <label for="period-end">End date</label>
+            <input id="period-end" type="date" name="end_date" value="{{ form_end }}">
+        </div>
+        <button class="progress-button" type="submit">Apply period</button>
+        {% if period != "all" or period_error %}
+            <a href="{{ url_for('progress.analytics_dashboard', period='all', _anchor='analytics-period', **chart_selection) }}">Reset to All time</a>
+        {% endif %}
+    </form>
+    <p id="period-help">Dates use Jamaica time. For a custom range, enter either date or both. Entered dates are included.</p>
+</section>

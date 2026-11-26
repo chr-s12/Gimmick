@@ -1,0 +1,33 @@
+{% extends "progress/base.html" %}
+{% block title %}Log Workout{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <h1>Log Workout</h1>
+        <p>Welcome, {{ student.username }}. Choose a saved routine to log a completed workout.</p>
+    </div>
+
+    <h2>My Saved Routines</h2>
+    {% if routines %}
+        <div class="card-grid">
+            {% for routine in routines %}
+                <section class="progress-card routine-card">
+                    <div class="card-heading">
+                        <h3>{{ routine.routine_name }}</h3>
+                        <span class="meta-tag">{{ routine.exercises | length }} exercises</span>
+                    </div>
+                    <ul class="exercise-list">
+                        {% for exercise in routine.exercises %}
+                            <li>
+                                <strong>{{ exercise.exercise_name }}</strong>
+                                <span>{{ exercise.sets }} sets × {{ exercise.reps }} reps at {{ exercise.weight_kg }} kg</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <a class="progress-button" href="{{ url_for('progress.log_workout', routine_id=routine.routine_id) }}">Log Workout<span class="visually-hidden"> for {{ routine.routine_name }}</span></a>
+                </section>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="progress-card"><p>You do not have any saved routines.</p></div>
+    {% endif %}
+{% endblock %}
