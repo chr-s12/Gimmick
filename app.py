@@ -6,7 +6,7 @@ from Student import Student
 from Routine import Routine
 from Exercise import Exercise
 import os
-from Trainer import Trainer
+from trainer import Trainer
 
 
 # Load or initialize a default Student user for testing

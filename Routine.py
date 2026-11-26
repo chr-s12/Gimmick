@@ -97,6 +97,7 @@ class Routine:
 
         return True
 
+    @classmethod
     def from_dict(cls, data: dict) -> 'Routine':
         exercises = [Exercise.from_dict(ex) for ex in data.get("exercises", [])]
         routine = cls(
@@ -107,7 +108,7 @@ class Routine:
         routine._routineId = data["routineId"]
         return routine
 
-
+    @classmethod
     def loadAllRoutines(cls) -> list['Routine']:
         if not routine_file_path.exists():
             return []
@@ -118,7 +119,7 @@ class Routine:
                 return []
         return [cls.from_dict(r) for r in raw]
 
-
+    @classmethod
     def getPublicRoutines(cls) -> list['Routine']:
         return [r for r in cls.loadAllRoutines() if r.getIsPublic()]
 
