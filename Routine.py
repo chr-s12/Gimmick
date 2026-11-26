@@ -96,6 +96,7 @@ class Routine:
             json.dump(updated_routines, f, indent=4)
 
         return True
+
     @classmethod
     def from_dict(cls, data: dict) -> 'Routine':
         exercises = [Exercise.from_dict(ex) for ex in data.get("exercises", [])]
@@ -121,6 +122,7 @@ class Routine:
     @classmethod
     def getPublicRoutines(cls) -> list['Routine']:
         return [r for r in cls.loadAllRoutines() if r.getIsPublic()]
+
 
 
             
