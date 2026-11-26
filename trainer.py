@@ -1,4 +1,4 @@
-from Activeuser import ActiveUser
+from ActiveUser import ActiveUser
 from datetime import datetime
 
 class Trainer(ActiveUser):
@@ -110,3 +110,18 @@ class Trainer(ActiveUser):
         booking.setBookingDateTime(new_booking_time) 
 
         return True
+
+    def assignRoutine(self, routine, stu) -> bool:
+        if routine is None or stu is None:
+            return False
+
+        # Ensure the student is in this trainer's client list
+        if not any(str(client.getIdNum()) == str(stu.getIdNum()) for client in self._client_list):
+            return False
+
+        # Prevent assigning a duplicate routine the student already has
+        if any(str(r.getRoutineId()) == str(routine.getRoutineId()) for r in stu._routine_list):
+            return False
+
+        return stu.adoptRoutine(routine)
+

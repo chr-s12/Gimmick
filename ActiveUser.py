@@ -92,7 +92,8 @@ class ActiveUser:
         with open(users_file_path, "w") as f:
             json.dump(users, f, indent=4)
         return True
-
+    
+    @classmethod 
     def loadUser(cls, idnum: str) -> 'ActiveUser | None':
         if not users_file_path.exists():
             return None
